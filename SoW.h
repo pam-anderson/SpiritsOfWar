@@ -1,14 +1,12 @@
-#define	FALSE   0     
-#define	TRUE    1
-#define	NULL    0       
+#include "altera_up_avalon_audio_and_video_config.h"
+#include "altera_up_avalon_audio.h"
+#include <altera_up_avalon_ps2.h>
+#include <altera_up_ps2_keyboard.h>
+#include "alt_types.h"
+#include <sys/alt_irq.h>
 
+#include <stdio.h>
 
-/* Universal return constants */
-
-#define	OK            1         /* system call ok               */
-#define	SYSERR       -1         /* system call failed           */
-#define	EOF          -2         /* End-of-file (usu. from read)	*/
-#define	TIMEOUT      -3         /* time out  (usu. recvtim)     */
 
 /* IRQ ID */
 #define SERIAL_IRQ 8
@@ -22,6 +20,7 @@
 #define SERIAL_PAR_LOC (alt_u8 *) 0x4
 
 #define SERIAL_BASE (volatile int *) 0x4470;
+#define KEY_BASE 0x4078
 
 
 
@@ -30,5 +29,9 @@
 void keyboard_init(void);
 void keyboard_read(void * context);
 
+
+void audio_init(void);
+void audio_play(void);
 // void serial_init(void); 
-void read_serial(void * context, alt_u32 id); 
+
+

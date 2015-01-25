@@ -43,50 +43,73 @@ SRAM_CE_N	:	OUT	STD_LOGIC;
 SRAM_OE_N	:	OUT	STD_LOGIC;
 SRAM_WE_N	:	OUT	STD_LOGIC;
 PS2_CLK : INOUT STD_LOGIC;
-PS2_DAT : INOUT STD_LOGIC
+PS2_DAT : INOUT STD_LOGIC;
+I2C_SDAT :	INOUT STD_LOGIC;
+I2C_SCLK :  OUT	STD_LOGIC;
+AUD_XCK	:	OUT	STD_LOGIC;
+CLOCK_27	:	IN		STD_LOGIC;
+AUD_ADCDAT :	IN	STD_LOGIC;
+AUD_ADCLRCK	:	IN	STD_LOGIC;
+AUD_BCLK	:	IN		STD_LOGIC;
+AUD_DACDAT	:	OUT	STD_LOGIC;
+AUD_DACLRCK	:	IN		STD_LOGIC;
+UART_RXD :		IN 	STD_LOGIC;
+UART_TXD :		OUT	STD_LOGIC
+
 );
 END SoW;
 ARCHITECTURE Structure OF SoW IS
-COMPONENT nios_system
-PORT (
-clk_clk : IN STD_LOGIC;
-reset_reset_n : IN STD_LOGIC;
-sdram_clk_clk : OUT STD_LOGIC;
-leds_export : OUT STD_LOGIC_VECTOR(7 DOWNTO 0);
-switches_export : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
-sdram_wire_addr : OUT STD_LOGIC_VECTOR(11 DOWNTO 0);
-sdram_wire_ba : BUFFER STD_LOGIC_VECTOR(1 DOWNTO 0);
-sdram_wire_cas_n : OUT STD_LOGIC;
-sdram_wire_cke : OUT STD_LOGIC;
-sdram_wire_cs_n : OUT STD_LOGIC;
-sdram_wire_dq : INOUT STD_LOGIC_VECTOR(15 DOWNTO 0);
-sdram_wire_dqm : BUFFER STD_LOGIC_VECTOR(1 DOWNTO 0);
-sdram_wire_ras_n : OUT STD_LOGIC;
-sdram_wire_we_n : OUT STD_LOGIC;
-lcd_data_DATA    : inout std_logic_vector(7 downto 0); -- DATA
-lcd_data_ON      : out   std_logic;                                        -- ON
-lcd_data_BLON    : out   std_logic;                                        -- BLON
-lcd_data_EN      : out   std_logic;                                        -- EN
-lcd_data_RS      : out   std_logic;                                        -- RS
-lcd_data_RW      : out   std_logic;
-sram_DQ              : inout std_logic_vector(15 downto 0); -- DQ
-sram_ADDR            : out   std_logic_vector(17 downto 0);                    -- ADDR
-sram_LB_N            : out   std_logic;                                        -- LB_N
-sram_UB_N            : out   std_logic;                                        -- UB_N
-sram_CE_N            : out   std_logic;                                        -- CE_N
-sram_OE_N            : out   std_logic;                                        -- OE_N
-sram_WE_N            : out   std_logic;                                        -- WE_N
-vga_controller_CLK   : out   std_logic;                                        -- CLK
-vga_controller_HS    : out   std_logic;                                        -- HS
-vga_controller_VS    : out   std_logic;                                        -- VS
-vga_controller_BLANK : out   std_logic;                                        -- BLANK
-vga_controller_SYNC  : out   std_logic;                                        -- SYNC
-vga_controller_R     : out   std_logic_vector(9 downto 0);                     -- R
-vga_controller_G     : out   std_logic_vector(9 downto 0);                     -- G
-vga_controller_B     : out   std_logic_vector(9 downto 0);                      -- B 
-keyboard_CLK         : inout std_logic;             -- CLK
-keyboard_DAT         : inout std_logic              -- DAT
-  ); 
+COMPONENT SoW_system
+        port (
+            clk_clk              : in    std_logic                    ;             -- clk
+            reset_reset_n        : in    std_logic                    ;             -- reset_n
+            leds_export          : out   std_logic_vector(7 downto 0);                     -- export
+            switches_export      : in    std_logic_vector(7 downto 0)  ; -- export
+            sdram_wire_addr      : out   std_logic_vector(11 downto 0);                    -- addr
+            sdram_wire_ba        : out   std_logic_vector(1 downto 0);                     -- ba
+            sdram_wire_cas_n     : out   std_logic;                                        -- cas_n
+            sdram_wire_cke       : out   std_logic;                                        -- cke
+            sdram_wire_cs_n      : out   std_logic;                                        -- cs_n
+            sdram_wire_dq        : inout std_logic_vector(15 downto 0); -- dq
+            sdram_wire_dqm       : out   std_logic_vector(1 downto 0);                     -- dqm
+            sdram_wire_ras_n     : out   std_logic;                                        -- ras_n
+            sdram_wire_we_n      : out   std_logic;                                        -- we_n
+            sdram_clk_clk        : out   std_logic;                                        -- clk
+            lcd_data_DATA        : inout std_logic_vector(7 downto 0)  ; -- DATA
+            lcd_data_ON          : out   std_logic;                                        -- ON
+            lcd_data_BLON        : out   std_logic;                                        -- BLON
+            lcd_data_EN          : out   std_logic;                                        -- EN
+            lcd_data_RS          : out   std_logic;                                        -- RS
+            lcd_data_RW          : out   std_logic;                                        -- RW
+            sram_DQ              : inout std_logic_vector(15 downto 0) ; -- DQ
+            sram_ADDR            : out   std_logic_vector(17 downto 0);                    -- ADDR
+            sram_LB_N            : out   std_logic;                                        -- LB_N
+            sram_UB_N            : out   std_logic;                                        -- UB_N
+            sram_CE_N            : out   std_logic;                                        -- CE_N
+            sram_OE_N            : out   std_logic;                                        -- OE_N
+            sram_WE_N            : out   std_logic;                                        -- WE_N
+            vga_controller_CLK   : out   std_logic;                                        -- CLK
+            vga_controller_HS    : out   std_logic;                                        -- HS
+            vga_controller_VS    : out   std_logic;                                        -- VS
+            vga_controller_BLANK : out   std_logic;                                        -- BLANK
+            vga_controller_SYNC  : out   std_logic;                                        -- SYNC
+            vga_controller_R     : out   std_logic_vector(9 downto 0);                     -- R
+            vga_controller_G     : out   std_logic_vector(9 downto 0);                     -- G
+            vga_controller_B     : out   std_logic_vector(9 downto 0);                     -- B
+            keyboard_CLK         : inout std_logic                  ;             -- CLK
+            keyboard_DAT         : inout std_logic                     ;             -- DAT
+            audiovideocfg_SDAT   : inout std_logic                     ;             -- SDAT
+            audiovideocfg_SCLK   : out   std_logic;                                        -- SCLK
+            audio_ADCDAT         : in    std_logic                    ;             -- ADCDAT
+            audio_ADCLRCK        : in    std_logic                   ;             -- ADCLRCK
+            audio_BCLK           : in    std_logic                 ;             -- BCLK
+            audio_DACDAT         : out   std_logic;                                        -- DACDAT
+            audio_DACLRCK        : in    std_logic               ;                   -- DACLRCK
+				audio_clk_clk        : out   std_logic;                                        -- clk
+            clk2_clk             : in    std_logic;                             -- clk
+				serial_RXD           : in    std_logic;           -- RXD
+            serial_TXD           : out   std_logic                                         -- TXD
+        );
 END COMPONENT;
 SIGNAL DQM : STD_LOGIC_VECTOR(1 DOWNTO 0);
 SIGNAL BA : STD_LOGIC_VECTOR(1 DOWNTO 0);
@@ -96,7 +119,7 @@ DRAM_BA_1 <= BA(1);
 DRAM_UDQM <= DQM(1);
 DRAM_LDQM <= DQM(0);
 -- Instantiate the Nios II system entity generated by the Qsys tool.
-NiosII: nios_system
+NiosII: SoW_system
 PORT MAP (
 clk_clk => CLOCK_50,
 reset_reset_n => KEY(0),
@@ -134,6 +157,17 @@ vga_controller_R     => VGA_R,     --               .R
 vga_controller_G     => VGA_G,     --               .G
 vga_controller_B     => VGA_B,
 keyboard_CLK         => PS2_CLK,         --       keyboard.CLK
-keyboard_DAT         => PS2_DAT          --               .DAT 
+keyboard_DAT         => PS2_DAT,          --               .DAT 
+audiovideocfg_SDAT   => I2C_SDAT,       -- SDAT
+audiovideocfg_SCLK   => I2C_SCLK,                                      -- SCLK
+audio_ADCDAT         => AUD_ADCDAT,       -- ADCDAT
+audio_ADCLRCK        => AUD_ADCLRCK,                            -- ADCLRCK
+audio_BCLK           => AUD_BCLK,                       -- BCLK
+audio_DACDAT         => AUD_DACDAT,                                  -- DACDAT
+audio_DACLRCK        => AUD_DACLRCK,
+audio_clk_clk        => AUD_XCK,                                    -- clk
+clk2_clk             => CLOCK_27,  
+serial_RXD           => UART_RXD,          -- RXD
+serial_TXD           => UART_TXD 
 );
 END Structure;
