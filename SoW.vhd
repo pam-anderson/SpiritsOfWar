@@ -9,7 +9,7 @@ LIBRARY ieee;
 USE ieee.std_logic_1164.all;
 USE ieee.std_logic_arith.all;
 USE ieee.std_logic_unsigned.all;
-ENTITY lights IS
+ENTITY SoW IS
 PORT (
 SW : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
 KEY : IN STD_LOGIC_VECTOR(0 DOWNTO 0);
@@ -45,8 +45,8 @@ SRAM_WE_N	:	OUT	STD_LOGIC;
 PS2_CLK : INOUT STD_LOGIC;
 PS2_DAT : INOUT STD_LOGIC
 );
-END lights;
-ARCHITECTURE Structure OF lights IS
+END SoW;
+ARCHITECTURE Structure OF SoW IS
 COMPONENT nios_system
 PORT (
 clk_clk : IN STD_LOGIC;
