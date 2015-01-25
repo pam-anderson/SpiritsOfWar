@@ -18,7 +18,7 @@
 ///#include <altera_up_sd_card_avalon_interface.h>
 #include "altera_up_avalon_rs232.h"
 
-#define serial_base (volatile int *) 0x4470;
+#define SERIAL_BASE (volatile int *) 0x4470;
 
 int main(void) {
 
