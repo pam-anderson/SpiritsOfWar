@@ -22,12 +22,14 @@
 #define SERIAL_BASE (volatile int *) 0x4070;
 #define KEY_BASE 0x4078
 
+char *KeyInput;
+
 
 
 /* Functions defined by startup code */
 
 void keyboard_init(void);
-void keyboard_read(void * context);
+void keyboard_read(void);
 
 
 void audio_init(void);

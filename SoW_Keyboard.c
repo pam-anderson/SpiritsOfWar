@@ -6,7 +6,7 @@
   unsigned  char  buff;
   char  ascii;
   alt_up_ps2_dev  *  ps2;
-  char *inputStr;
+
 
   void keyboard_init(void)
   {
@@ -17,7 +17,7 @@
   	  printf("Device : %d\n", ps2->device_type);
   }
 
-  void keyboard_read(void * context)
+  void keyboard_read(void)
   {
   	 while(1)
   	 {
@@ -25,8 +25,9 @@
   		 {
   			 if(code_type == KB_ASCII_MAKE_CODE)
   			 {
-  				 translate_make_code(code_type, buff, inputStr);
-  		  		 printf("%c", *inputStr);
+  				 translate_make_code(code_type, buff, KeyInput);
+  		  		 printf("%c", *KeyInput);
+  		  		 return;
   			}
   		 }
 

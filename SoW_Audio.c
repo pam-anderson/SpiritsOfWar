@@ -36,13 +36,13 @@ void audio_play()
 
 
 
-int main()
+/*int main()
 {
   audio_init();
   	  printf("Audio Initialization Successful\n");
   audio_play();
 
   return 0;
-}
+}*/
 
 
