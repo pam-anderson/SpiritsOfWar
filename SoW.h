@@ -19,7 +19,7 @@
 #define SERIAL_DATA_LOC (alt_u8 *) 0x0
 #define SERIAL_PAR_LOC (alt_u8 *) 0x4
 
-#define SERIAL_BASE (volatile int *) 0x4470;
+#define SERIAL_BASE (volatile int *) 0x4070;
 #define KEY_BASE 0x4078
 
 
