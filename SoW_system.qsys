@@ -228,11 +228,27 @@
          type = "int";
       }
    }
+   element onchip_memory2_0.s1
+   {
+      datum _lockedAddress
+      {
+         value = "1";
+         type = "boolean";
+      }
+   }
    element new_sdram_controller_0.s1
    {
       datum baseAddress
       {
          value = "16777216";
+         type = "String";
+      }
+   }
+   element LEDs.s1
+   {
+      datum baseAddress
+      {
+         value = "16464";
          type = "String";
       }
    }
@@ -249,22 +265,6 @@
       datum baseAddress
       {
          value = "16384";
-         type = "String";
-      }
-   }
-   element onchip_memory2_0.s1
-   {
-      datum _lockedAddress
-      {
-         value = "1";
-         type = "boolean";
-      }
-   }
-   element LEDs.s1
-   {
-      datum baseAddress
-      {
-         value = "16464";
          type = "String";
       }
    }
@@ -331,7 +331,7 @@
  <parameter name="projectName" value="" />
  <parameter name="sopcBorderPoints" value="false" />
  <parameter name="systemHash" value="1" />
- <parameter name="timeStamp" value="1422214161584" />
+ <parameter name="timeStamp" value="1422218217670" />
  <parameter name="useTestBenchNamingPattern" value="false" />
  <instanceScript></instanceScript>
  <interface name="clk" internal="clk_0.clk_in" type="clock" dir="end" />
