@@ -54,7 +54,9 @@ AUD_BCLK	:	IN		STD_LOGIC;
 AUD_DACDAT	:	OUT	STD_LOGIC;
 AUD_DACLRCK	:	IN		STD_LOGIC;
 UART_RXD :		IN 	STD_LOGIC;
-UART_TXD :		OUT	STD_LOGIC
+UART_TXD :		OUT	STD_LOGIC;
+SD_DAT, SD_DAT3, SD_CMD: INOUT STD_LOGIC;
+SD_CLK: OUT STD_LOGIC
 
 );
 END SoW;
@@ -108,7 +110,11 @@ COMPONENT SoW_system
 				audio_clk_clk        : out   std_logic;                                        -- clk
             clk2_clk             : in    std_logic;                             -- clk
 				serial_RXD           : in    std_logic;           -- RXD
-            serial_TXD           : out   std_logic                                         -- TXD
+            serial_TXD           : out   std_logic;				-- TXD
+				sdcard_b_SD_cmd: INOUT STD_LOGIC;
+				sdcard_b_SD_dat: INOUT STD_LOGIC;
+				sdcard_b_SD_dat3: INOUT STD_LOGIC;
+				sdcard_o_SD_clock: OUT STD_LOGIC
         );
 END COMPONENT;
 SIGNAL DQM : STD_LOGIC_VECTOR(1 DOWNTO 0);
@@ -168,6 +174,10 @@ audio_DACLRCK        => AUD_DACLRCK,
 audio_clk_clk        => AUD_XCK,                                    -- clk
 clk2_clk             => CLOCK_27,  
 serial_RXD           => UART_RXD,          -- RXD
-serial_TXD           => UART_TXD 
+serial_TXD           => UART_TXD,
+sdcard_b_SD_cmd => SD_CMD,
+sdcard_b_SD_dat => SD_DAT,
+sdcard_b_SD_dat3 => SD_DAT3,
+sdcard_o_SD_clock => SD_CLK 
 );
 END Structure;
