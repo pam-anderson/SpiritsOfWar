@@ -16,7 +16,7 @@
 
 #include "SoW.h"
 
-alt_up_rs2323_dev* serial;
+alt_up_rs232_dev* serial;
 
 void serial_init() {
 	serial = alt_up_rs232_open_dev("/dev/rs232_0");

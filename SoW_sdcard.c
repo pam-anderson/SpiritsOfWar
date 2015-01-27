@@ -14,7 +14,7 @@ void sdcard_init() {
 	sdcard = alt_up_sd_card_open_dev("/dev/sdcard");
 }
 
-int sdcard_write_file(char* file_name, int* buffer, int size) {
+int sdcard_write_file(char* file_name, alt_u8* buffer, int size) {
 	if(alt_up_sd_card_is_Present() && alt_up_sd_card_is_FAT16() && sdcard != NULL) {
 		int fd = alt_up_sd_card_fopen(file_name, true);
 		int i = 0;
@@ -32,7 +32,7 @@ int sdcard_write_file(char* file_name, int* buffer, int size) {
 	return 1;
 }
 
-int sdcard_read_file(char* file_name, int* buffer, int size) {
+int sdcard_read_file(char* file_name, alt_u8* buffer, int size) {
 	if(alt_up_sd_card_is_Present() && alt_up_sd_card_is_FAT16() && sdcard != NULL) {
 		int fd = alt_up_sd_card_fopen(file_name, false);
 		int i = 0;
@@ -40,7 +40,6 @@ int sdcard_read_file(char* file_name, int* buffer, int size) {
 		while(i < size && temp >= 0) {
 			temp = alt_up_sd_card_read(fd);
 			buffer[i] = temp;
-			printf("%d, %d\n", i, temp);
 			i++;
 		}
 		alt_up_sd_card_fclose(fd);

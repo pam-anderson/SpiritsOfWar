@@ -39,11 +39,11 @@ void audio_init(void);
 void audio_play(void);
 
 void serial_init(void);
-void serial_write(alt_u8);
+int serial_write(alt_u8);
 
 void sdcard_init(void);
-int sdcard_write_file(char*, int*, int);
-int sdcard_read_file(char*, int*, int);
+int sdcard_write_file(char*, alt_u8*, int);
+int sdcard_read_file(char*, alt_u8*, int);
 
 
 
