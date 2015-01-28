@@ -1,50 +1,53 @@
-#include "altera_up_avalon_audio_and_video_config.h"
-#include "altera_up_avalon_audio.h"
-#include <altera_up_avalon_ps2.h>
-#include <altera_up_ps2_keyboard.h>
 #include "alt_types.h"
-#include <sys/alt_irq.h>
-#include <altera_up_sd_card_avalon_interface.h>
 #include "altera_up_avalon_rs232.h"
-#include <stdio.h>
-#include "io.h"
-#include <stdlib.h>
+#include "altera_up_avalon_video_pixel_buffer_dma.h"
+#include "altera_up_avalon_video_character_buffer_with_dma.h"
 
+#define	FALSE   0     
+#define	TRUE    1
+
+/* Universal return constants */
+
+#define	OK            1         /* system call ok               */
+#define	SYSERR       -1         /* system call failed           */
+#define	TIMEOUT      -3         /* time out  (usu. recvtim)     */
 
 /* IRQ ID */
-#define SERIAL_IRQ 8
+#define SERIAL_IRQ   8
 #define KEYBOARD_IRQ 7
 
 /* SYSTEM NAMES*/
-#define RS232_NAME "uart_0"
+#define RS232_NAME "/dev/rs232_0"
 
 /* MEMORY LOCATIONS */
-#define SERIAL_DATA_LOC (alt_u8 *) 0x0
-#define SERIAL_PAR_LOC (alt_u8 *) 0x4
+#define SERIAL_DATA_LOC (volatile alt_u8 *) 0x0
+#define SERIAL_PAR_LOC (volatile alt_u8 *)  0x4
+#define SERIAL_BASE (volatile int *)        0x4470
 
-#define SERIAL_BASE (volatile int *) 0x4070
-#define KEY_BASE 0x4078
+#define SIZE_OF_TILE     16
+#define SIZE_OF_MAP      128
+#define DIMENSION_OF_MAP 8
 
-char *KeyInput;
-
-
+typedef struct {
+	// x and y coordinates of top left corner
+	int x;
+	int y;
+} game_tile;
 
 /* Functions defined by startup code */
 
 void keyboard_init(void);
-void keyboard_read(void);
+void keyboard_read(void * context);
 
+// void serial_init(void); 
+void read_serial();
+void read_serial_ISR(void* context, alt_u32 id);
+void draw_menu(void);
+void move_arrow(int curr_position, int new_position);
+void show_instructions(void);
+void show_menu(void);
+void show_game(void);
 
-void audio_init(void);
-void audio_play(void);
-
-void serial_init(void);
-int serial_write(alt_u8);
-
-void sdcard_init(void);
-int sdcard_write_file(char*, alt_u8*, int);
-int sdcard_read_file(char*, alt_u8*, int);
-
-
-
-
+alt_up_rs232_dev *serial_port;
+alt_up_char_buffer_dev *char_buffer;
+alt_up_pixel_buffer_dma_dev* pixel_buffer;
