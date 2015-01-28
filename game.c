@@ -6,16 +6,16 @@ int cursor;
 
 struct Character
 {
-	int HP = 10;
-	int NumMoves = 3;
-	int Range = 1;
-	int Str = 2;
-	int Def = 1;
-}Unit;
+	int HP;
+	int NumMoves;
+	int Range;
+	int Str;
+	int Def;
+}Unit1;
 
 struct MapTile
 {
-	int Status = 0;
+	int Status;
 }Map[8][8];
 
 
@@ -27,12 +27,15 @@ enum MenuOptions
 
 void gamemenu(void)
 {
+	char c=0;
+
 	cursor = GameStart;
+	keyboard_read();
+	printf("Cursor is now at GameStart!\n");
 	
 	while(1)
 	{
-		keyboard_read();
-		if(*KeyInput == 'w') // Replace with Up Arrow
+		if(c == 87) // Replace with Up Arrow
 		{
 			if(cursor == GameStart){} // Do Nothing
 			else if(cursor == Help) // Go Down
@@ -44,12 +47,13 @@ void gamemenu(void)
 				cursor--; // Go Down if not Edge Case
 		}
 
-		else if(*KeyInput == 's')// Replace with Down Arrow
+		else if(c == 83)// Replace with Down Arrow
 		{
+			printf("!!!!\n");
 			if(cursor == GameStart)
 			{
 				cursor = Help;
-				printf("Cursor is now at GameStart!\n");
+				printf("Cursor is now at Help!\n");
 			}
 			else if(cursor == Help){}
 			else
@@ -57,10 +61,12 @@ void gamemenu(void)
 
 		}
 
-		else if(*KeyInput == ' ')
+		else if(c == ' ')
 		{
 			break;
 		}
+
+		printf("%i %i\n", c, cursor);
 
 
 	}
@@ -68,10 +74,11 @@ void gamemenu(void)
 }	
 
 
-int main()
+/*int main()
 {
+	keyboard_init();
 	gamemenu();
 	printf("Cursor is at %i", cursor);
     return 0;
-}
+}*/
 

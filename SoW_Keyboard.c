@@ -2,6 +2,7 @@
 
 
 
+
   KB_CODE_TYPE  code_type ;
   unsigned  char  buff;
   char  ascii;
@@ -19,6 +20,7 @@
 
   void keyboard_read(void)
   {
+	 char c;
   	 while(1)
   	 {
   		 if(decode_scancode(ps2, &code_type, &buff, &ascii) == 0)
@@ -26,7 +28,8 @@
   			 if(code_type == KB_ASCII_MAKE_CODE)
   			 {
   				 translate_make_code(code_type, buff, KeyInput);
-  		  		 printf("%c", *KeyInput);
+  				 printf("%c\n", *KeyInput);
+
   		  		 return;
   			}
   		 }
@@ -40,15 +43,20 @@
 /*int main()
 {
 	keyboard_init();
+	keyboard_read();
+	keyboard_read();
+	keyboard_read();
+	keyboard_read();
+}*/
 	//void * context = NULL;
-	alt_irq_enable(ps2);
+	/*alt_irq_enable(ps2);
 	IOWR(KEY_BASE, 1, 0x01);
-	alt_irq_register(ps2, context, &keyboard_read);
+	alt_irq_register(ps2, &keyboard_read);
 	while(1);
-	printf("Returning\n");
+	printf("Returning\n");*/
 
 	// Configure keyboard to send interrupt
-
+/*
 
 
   while(1)

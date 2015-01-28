@@ -2,9 +2,11 @@
 #include <stdio.h>
 
 int main () {
-	read_serial();
-	show_menu();
-	return 0;
+	while(1)
+	{
+		read_serial();
+		show_menu();
+	}
 }
 
 
