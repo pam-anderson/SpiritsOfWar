@@ -27,12 +27,30 @@
 #define SIZE_OF_TILE     16
 #define SIZE_OF_MAP      128
 #define DIMENSION_OF_MAP 8
+#define MAP_CORNER_X     96
+#define MAP_CORNER_Y     56
+
+#define CHARS_PER_PLAYER 3
 
 typedef struct {
-	// x and y coordinates of top left corner
 	int x;
 	int y;
+} position;
+
+typedef struct {
+	position pos;
 } game_tile;
+
+typedef struct {
+	position pos;
+	int health;
+	const int attack;
+	const int defense;
+} character;
+
+typedef struct {
+	character characters[CHARS_PER_PLAYER];
+} player;
 
 /* Functions defined by startup code */
 
