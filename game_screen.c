@@ -5,12 +5,18 @@
 
 game_tile map[8][8];
 player Players[2];
+int CurrentPlayer = 1;
+int CurrentCharacter = 0;
 
 #define DEFAULT_HP 		10
 #define DEFAULT_ATTACK	3
 #define DEFAULT_DEFENSE	5
+#define NO_MOVES 2
+#define ATK_RNG 1
 #define UP	87
 #define DOWN 83
+#define LEFT 65
+#define RIGHT 68
 
 
 typedef enum {
@@ -53,24 +59,24 @@ void initialize_players() {
 
 	int i,j;
 
-	Players[0]->characters[0].pos.x = 2;
+	Players[0]->characters[0].pos.x = 0;
+	Players[0]->characters[0].pos.y = 7;           //        [ ][ ] [ ][ ] [ ][ ] [0][1]
+	                                               //        [ ][ ] [ ][ ] [ ][ ] [ ][2]
+	                                               //        [ ][ ] [ ][ ] [ ][ ] [ ][ ]
+	Players[0]->characters[1].pos.x = 0;	       //        [ ][ ] [ ][ ] [ ][ ] [ ][ ]
+	Players[0]->characters[1].pos.y = 7;	       //        [ ][ ] [ ][ ] [ ][ ] [ ][ ]
+	                                    	       //        [ ][ ] [ ][ ] [ ][ ] [ ][ ]
+	Players[0]->characters[2].pos.x = 1;           //        [0][ ] [ ][ ] [ ][ ] [ ][ ]
+	Players[0]->characters[2].pos.y = 6;		   //        [1][2] [ ][ ] [ ][ ] [ ][ ]
 
-	Players[0]->characters[0].pos.y = 7;
-
-	Players[0]->characters[1].pos.x = 3;
-	Players[0]->characters[1].pos.y = 7;
-
-	Players[0]->characters[2].pos.x = 4;
-	Players[0]->characters[2].pos.y = 7;
-
-	Players[1]->characters[0].pos.x = 3;
+	Players[1]->characters[0].pos.x = 6;
 	Players[1]->characters[0].pos.y = 0;
 
-	Players[1]->characters[1].pos.x = 4;
+	Players[1]->characters[1].pos.x = 7;
 	Players[1]->characters[1].pos.y = 0;
 
-	Players[1]->characters[2].pos.x = 5;
-	Players[1]->characters[2].pos.y = 0;
+	Players[1]->characters[2].pos.x = 7;
+	Players[1]->characters[2].pos.y = 1;
 
 	for(i = 0; i<NO_PLAYERS; i++)
 	{
@@ -86,18 +92,117 @@ void initialize_players() {
 void attack_menu()
 {
 
+		int	cursorx = Players[CurrentPlayer]->characters[CurrentCharacter].pos.x;
+		int	cursory = Players[CurrentPlayer]->characters[CurrentCharacter].pos.y;
+
+		int i;
+		int enemy = CurrentPlayer ^ 1;
+
+		while(1)
+		{
+			if(CurrentPlayer == 0)
+				keyboard_read();
+			else if(CurrentPlayer == 1){// Read from Serial }
+			}
+
+
+			if(*KeyInput == UP )
+			{
+				if(cursory == 0 || cursory-ATK_RNG < Players[CurrentPlayer]->characters[CurrentCharacter].pos.y-ATK_RNG ){}
+				else
+					cursory--;
+			}
+			else if(*KeyInput == DOWN )
+			{
+				if(cursory == 7 || cursory+ATK_RNG > Players[CurrentPlayer]->characters[CurrentCharacter].pos.y + ATK_RNG){}
+				else
+					cursory++;
+			}
+			else if(*KeyInput == LEFT )
+			{
+				if(cursorx == 0 || cursorx-ATK_RNG < Players[CurrentPlayer]->characters[CurrentCharacter].pos.x - ATK_RNG){}
+				else
+					cursorx--;
+			}
+			else if(*KeyInput == RIGHT)
+			{
+				if(cursorx == 7 || cursorx + ATK_RNG > Players[CurrentPlayer]->characters[CurrentCharacter].pos.x + ATK_RNG ){}
+				else
+					cursorx++;
+			}
+			else if(*KeyInput == ' ')
+			{
+				break;
+			}
+		}
+
+		for(i = 0; i<CHARS_PER_PLAYER; i++)
+		{
+			if(Players[enemy]->characters[i].pos.x == cursorx && Players[enemy]->characters[i].pos.y == cursory)
+			{
+				Players[enemy]->characters[i].hp = Players[enemy]->characters[i].hp - (Players[CurrentPlayer]->characters[CurrentCharacter].atk - Players[enemy]->characters[i].def) ;
+			}
+		}
+
+
 }
 
 void move_menu()
 {
 
+	// Remove Menu add Valid Move Highlights?
+	int cursorx = Players[CurrentPlayer]->characters[CurrentCharacter].pos.x;
+	int cursory = Players[CurrentPlayer]->characters[CurrentCharacter].pos.y;
+
+	while(1)
+	{
+		if(CurrentPlayer == 0)
+			keyboard_read();
+		else if(CurrentPlayer == 1){// Read from Serial }
+		}
+
+
+		if(*KeyInput == UP )
+		{
+			if(cursory == 0 || cursory-1 < Players[CurrentPlayer]->characters[CurrentCharacter].pos.y-NO_MOVES){}
+			else
+				cursory--;
+		}
+		else if(*KeyInput == DOWN )
+		{
+			if(cursory == 7 || cursory+1 > Players[CurrentPlayer]->characters[CurrentCharacter].pos.y + NO_MOVES ){}
+			else
+				cursory++;
+		}
+		else if(*KeyInput == LEFT )
+		{
+			if(cursorx == 0 || cursorx-1 < Players[CurrentPlayer]->characters[CurrentCharacter].pos.x - NO_MOVES){}
+			else
+				cursorx--;
+		}
+		else if(*KeyInput == RIGHT)
+		{
+			if(cursorx == 7 || cursorx + 1 > Players[CurrentPlayer]->characters[CurrentCharacter].pos.x + NO_MOVES ){}
+			else
+				cursorx++;
+		}
+		else if(*KeyInput == ' ')
+		{
+			break;
+		}
+	}
+
+	Players[CurrentPlayer]->characters[CurrentCharacter].pos.x = cursorx;
+	Players[CurrentPlayer]->characters[CurrentCharacter].pos.y = cursory;
+
+
 }
 
 void play_game() {
 	int i, TurnDone, GameOver, cursor;
-	int CurrentPlayer = 1;
 	show_game();
 	initialize_players();
+	// draw map
 	while(alt_up_rs232_read_data(serial_port, SERIAL_DATA_LOC, SERIAL_PAR_LOC) == -1){}
 
 	while(*SERIAL_DATA_LOC != 27 || GameOver) // While ESC has not been pressed.
@@ -105,7 +210,7 @@ void play_game() {
 		CurrentPlayer = CurrentPlayer ^ 1;
 		TurnDone = 0;
 
-		for(i = 0; i<CHARS_PER_PLAYER; i++)
+		for(CurrentCharacter = 0; CurrentCharacter<CHARS_PER_PLAYER; CurrentCharacter++)
 		{
 			if(Players[CurrentPlayer]->characters[i].hp <= 0){}
 			else
