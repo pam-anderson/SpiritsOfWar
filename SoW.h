@@ -104,6 +104,7 @@ void music_file_size(void);
 void music_enable_ISR(void);
 void audio_isr(void * context, alt_u32 id);
 void music_file_load(void);
+void music_GO(char * File);
 
 void play_game(void);
 
