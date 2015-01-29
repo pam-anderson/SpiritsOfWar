@@ -64,6 +64,9 @@
   		printf("IRQ Registered\n");
   	else
   		printf("IRQ Not Registered\n");
+
+  	IOWR(KEY_BASE, 1, 0x01);
+
   	alt_up_audio_enable_write_interrupt(ps2);
   }
 
