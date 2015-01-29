@@ -72,43 +72,57 @@ void draw_cursor(int old_x, int old_y, int new_x, int new_y) {
 			map[new_x][new_y].pos.x + SIZE_OF_TILE, map[new_x][new_y].pos.y + SIZE_OF_TILE, 0x7FF, 0);
 }
 
+void move_player(int player_id, int char_id, int old_x, int old_y, int new_x, int new_y) {
+	// Erase old selection
+	alt_up_pixel_buffer_dma_draw_box(pixel_buffer, map[old_x][old_y].pos.x + 1, map[old_x][old_y].pos.y + 1,
+			map[old_x][old_y].pos.x + SIZE_OF_TILE - 1, map[old_x][old_y].pos.y + SIZE_OF_TILE - 1, 0x4321, 0);
+	// Highlight new selection
+	alt_up_pixel_buffer_dma_draw_box(pixel_buffer, map[new_x][new_y].pos.x + 1, map[new_x][new_y].pos.y + 1,
+			map[new_x][new_y].pos.x + SIZE_OF_TILE - 1, map[new_x][new_y].pos.y + SIZE_OF_TILE - 1,
+			Players[player_id]->characters[char_id].colour, 0);
+}
+
 void initialize_players() {
 
 	int i;
 	int j;
+	int x;
+	int y;
 	int healthbar_x;
 	int healthbar_y = 20;
 
-	Players[0]->characters[0].pos.x = map[0][7].pos.x;
-	Players[0]->characters[0].pos.y = map[0][7].pos.y;           //        [ ][ ] [ ][ ] [ ][ ] [0][1]
+	Players[0]->characters[0].pos.x = 0;
+	Players[0]->characters[0].pos.y = 7;           //        [ ][ ] [ ][ ] [ ][ ] [0][1]
 	                                               	   	   	     //        [ ][ ] [ ][ ] [ ][ ] [ ][2]
 	                                               	   	   	     //        [ ][ ] [ ][ ] [ ][ ] [ ][ ]
-	Players[0]->characters[1].pos.x = map[0][6].pos.x;	         //        [ ][ ] [ ][ ] [ ][ ] [ ][ ]
-	Players[0]->characters[1].pos.y = map[0][6].pos.y;	         //        [ ][ ] [ ][ ] [ ][ ] [ ][ ]
+	Players[0]->characters[1].pos.x = 0;	         //        [ ][ ] [ ][ ] [ ][ ] [ ][ ]
+	Players[0]->characters[1].pos.y = 6;	         //        [ ][ ] [ ][ ] [ ][ ] [ ][ ]
 	                                    	       	   	   	     //        [ ][ ] [ ][ ] [ ][ ] [ ][ ]
-	Players[0]->characters[2].pos.x = map[1][7].pos.x;           //        [0][ ] [ ][ ] [ ][ ] [ ][ ]
-	Players[0]->characters[2].pos.y = map[0][7].pos.y;		     //        [1][2] [ ][ ] [ ][ ] [ ][ ]
+	Players[0]->characters[2].pos.x = 1;           //        [0][ ] [ ][ ] [ ][ ] [ ][ ]
+	Players[0]->characters[2].pos.y = 7;		     //        [1][2] [ ][ ] [ ][ ] [ ][ ]
 
-	Players[1]->characters[0].pos.x = map[7][0].pos.x;
-	Players[1]->characters[0].pos.y = map[7][0].pos.y;
+	Players[1]->characters[0].pos.x = 7;
+	Players[1]->characters[0].pos.y = 0;
 
-	Players[1]->characters[1].pos.x = map[6][0].pos.x;
-	Players[1]->characters[1].pos.y = map[6][0].pos.y;
+	Players[1]->characters[1].pos.x = 6;
+	Players[1]->characters[1].pos.y = 0;
 
-	Players[1]->characters[2].pos.x = map[7][1].pos.x;
-	Players[1]->characters[2].pos.y = map[7][1].pos.y;
+	Players[1]->characters[2].pos.x = 7;
+	Players[1]->characters[2].pos.y = 1;
 
-	for(i = 0; i<NO_PLAYERS; i++) {
+	for(i = 0; i < NO_PLAYERS; i++) {
 		healthbar_x = 29;
 
-		for(j = 0; j<CHARS_PER_PLAYER; j++, healthbar_x += 94) {
+		for(j = 0; j < CHARS_PER_PLAYER; j++, healthbar_x += 94) {
 			Players[i]->characters[j].hp = DEFAULT_HP;
 			Players[i]->characters[j].atk = DEFAULT_ATTACK;
 			Players[i]->characters[j].def = DEFAULT_DEFENSE;
 			Players[i]->characters[j].colour = colours[i][j];
+			x = Players[i]->characters[j].pos.x;
+			y = Players[i]->characters[j].pos.y;
 
-			alt_up_pixel_buffer_dma_draw_box(pixel_buffer, Players[i]->characters[j].pos.x + 1, Players[i]->characters[j].pos.y + 1,
-					Players[i]->characters[j].pos.x + SIZE_OF_TILE - 1, Players[i]->characters[j].pos.y + SIZE_OF_TILE - 1,
+			alt_up_pixel_buffer_dma_draw_box(pixel_buffer, map[x][y].pos.x + 1, map[x][y].pos.y + 1,
+					map[x][y].pos.x + SIZE_OF_TILE - 1, map[x][y].pos.y + SIZE_OF_TILE - 1,
 					Players[i]->characters[j].colour, 0);
 			draw_healthbar(healthbar_x, healthbar_y, Players[i]->characters[j].colour);
 		}
@@ -116,125 +130,95 @@ void initialize_players() {
 	}
 }
 
-void attack_menu()
+void player_attack(int player_id)
 {
-		int	cursorx = Players[CurrentPlayer]->characters[CurrentCharacter].pos.x;
-		int	cursory = Players[CurrentPlayer]->characters[CurrentCharacter].pos.y;
+		int	sel_x;
+		int sel_y;
 		int i;
 		int enemy = CurrentPlayer ^ 1;
 
-		while(1)
-		{
-			if(CurrentPlayer == 0)
-				keyboard_read();
-			else if(CurrentPlayer == 1){
-				// Read from Serial
-			}
-
-			if(*KeyInput == UP ) {
-				if(cursory == 0 || cursory-ATK_RNG < Players[CurrentPlayer]->characters[CurrentCharacter].pos.y-ATK_RNG ){}
-				else
-					cursory--;
-			} else if(*KeyInput == DOWN ) {
-				if(cursory == 7 || cursory+ATK_RNG > Players[CurrentPlayer]->characters[CurrentCharacter].pos.y + ATK_RNG){}
-				else
-					cursory++;
-			} else if(*KeyInput == LEFT ) {
-				if(cursorx == 0 || cursorx-ATK_RNG < Players[CurrentPlayer]->characters[CurrentCharacter].pos.x - ATK_RNG){}
-				else
-					cursorx--;
-			} else if(*KeyInput == RIGHT) {
-				if(cursorx == 7 || cursorx + ATK_RNG > Players[CurrentPlayer]->characters[CurrentCharacter].pos.x + ATK_RNG ){}
-				else
-					cursorx++;
-			} else if(*KeyInput == ' ') {
-				break;
-			}
-		}
-
-		for(i = 0; i<CHARS_PER_PLAYER; i++) {
-			if(Players[enemy]->characters[i].pos.x == cursorx && Players[enemy]->characters[i].pos.y == cursory) {
-				Players[enemy]->characters[i].hp = Players[enemy]->characters[i].hp -
-						(Players[CurrentPlayer]->characters[CurrentCharacter].atk - Players[enemy]->characters[i].def);
-			}
+		for(i = 0; i < CHARS_PER_PLAYER; i++) {
+			if(Players[player_id]->characters[i].hp > 0) {
+				while(1) {
+				sel_x = Players[player_id]->characters[i].pos.x;
+				sel_y = Players[player_id]->characters[i].pos.y;
+				while(alt_up_rs232_read_data(serial_port, SERIAL_DATA_LOC, SERIAL_PAR_LOC) == -1){
+										  // Wait for character to come in
+				}
+							if(*SERIAL_DATA_LOC == 'w') { // MOVE UP
+								if(sel_y > 0) {
+									sel_y--;
+									Players[player_id]->characters[i].pos.y--;
+									move_player(player_id, i, sel_x, sel_y + 1, sel_x, sel_y);
+								}
+							} else if (*SERIAL_DATA_LOC == 's') { // MOVE DOWN
+								if(sel_y < DIMENSION_OF_MAP) {
+									sel_y++;
+									Players[player_id]->characters[i].pos.y++;
+									move_player(player_id, i, sel_x, sel_y - 1, sel_x, sel_y);
+								}
+							} else if (*SERIAL_DATA_LOC == 'a') { // MOVE LEFT
+								if(sel_x > 0) {
+									sel_x--;
+									Players[player_id]->characters[i].pos.x--;
+									move_player(player_id, i, sel_x + 1, sel_y, sel_x, sel_y);
+								}
+							} else if (*SERIAL_DATA_LOC == 'd') { // MOVE RIGHT
+								if(sel_x < DIMENSION_OF_MAP) {
+									sel_x++;
+									Players[player_id]->characters[i].pos.x++;
+									move_player(player_id, i, sel_x - 1, sel_y, sel_x, sel_y);
+								}
+							} else if (*SERIAL_DATA_LOC == ' ') { // PLACE PLAYER
+								break;
+							}
+							printf("data: %c\n", *SERIAL_DATA_LOC);
+			}}
 		}
 }
 
 void move_menu() {
-	// Remove Menu add Valid Move Highlights?
-	int cursorx = Players[CurrentPlayer]->characters[CurrentCharacter].pos.x;
-	int cursory = Players[CurrentPlayer]->characters[CurrentCharacter].pos.y;
-
-	while(1) {
-		if(CurrentPlayer == 0)
-			keyboard_read();
-		else if(CurrentPlayer == 1){
-			// Read from Serial
-		}
-
-		if(*KeyInput == UP ) {
-			if(cursory == 0 || cursory-1 < Players[CurrentPlayer]->characters[CurrentCharacter].pos.y-NO_MOVES){}
-			else
-				cursory--;
-		} else if(*KeyInput == DOWN ) {
-			if(cursory == 7 || cursory+1 > Players[CurrentPlayer]->characters[CurrentCharacter].pos.y + NO_MOVES ){}
-			else
-				cursory++;
-		} else if(*KeyInput == LEFT ) {
-			if(cursorx == 0 || cursorx-1 < Players[CurrentPlayer]->characters[CurrentCharacter].pos.x - NO_MOVES){}
-			else
-				cursorx--;
-		} else if(*KeyInput == RIGHT) {
-			if(cursorx == 7 || cursorx + 1 > Players[CurrentPlayer]->characters[CurrentCharacter].pos.x + NO_MOVES ){}
-			else
-				cursorx++;
-		} else if(*KeyInput == ' ') {
-			break;
-		}
-	}
-	Players[CurrentPlayer]->characters[CurrentCharacter].pos.x = cursorx;
-	Players[CurrentPlayer]->characters[CurrentCharacter].pos.y = cursory;
-}
-
-void play_game() {
-	int i;
 	int sel_x = 0;
 	int sel_y = 0;
 
+	while(1) {
+		while(alt_up_rs232_read_data(serial_port, SERIAL_DATA_LOC, SERIAL_PAR_LOC) == -1){
+						  // Wait for character to come in
+		}
+			if(*SERIAL_DATA_LOC == 'w') { // MOVE UP
+				if(sel_y > 0) {
+					sel_y--;
+					draw_cursor(sel_x, sel_y + 1, sel_x, sel_y);
+				}
+			} else if (*SERIAL_DATA_LOC == 's') { // MOVE DOWN
+				if(sel_y < DIMENSION_OF_MAP) {
+					sel_y++;
+					draw_cursor(sel_x, sel_y - 1, sel_x, sel_y);
+				}
+			} else if (*SERIAL_DATA_LOC == 'a') { // MOVE LEFT
+				if(sel_x > 0) {
+					sel_x--;
+					draw_cursor(sel_x + 1, sel_y, sel_x, sel_y);
+				}
+			} else if (*SERIAL_DATA_LOC == 'd') { // MOVE RIGHT
+				if(sel_x < DIMENSION_OF_MAP) {
+					sel_x++;
+					draw_cursor(sel_x - 1, sel_y, sel_x, sel_y);
+				}
+			}
+			printf("data: %c\n", *SERIAL_DATA_LOC);
+	}
+}
+
+void play_game() {
 	show_game();
 	initialize_players();
-	draw_cursor(0, 0, sel_x, sel_y);
-	// draw map
-
-	while(alt_up_rs232_read_data(serial_port, SERIAL_DATA_LOC, SERIAL_PAR_LOC) == -1){}
+	draw_cursor(0, 0, 0, 0);
 
 	 while(1){
-			  while(alt_up_rs232_read_data(serial_port, SERIAL_DATA_LOC, SERIAL_PAR_LOC) == -1){
-				  // Wait for character to come in
-			  }
-
-			  if(*SERIAL_DATA_LOC == 'w') { // MOVE UP
-				  if(sel_y > 0) {
-					  sel_y--;
-					  draw_cursor(sel_x, sel_y + 1, sel_x, sel_y);
-				  }
-			  } else if (*SERIAL_DATA_LOC == 's') { // MOVE DOWN
-				  if(sel_y < DIMENSION_OF_MAP) {
-					  sel_y++;
-					  draw_cursor(sel_x, sel_y - 1, sel_x, sel_y);
-				  }
-			  } else if (*SERIAL_DATA_LOC == 'a') { // MOVE LEFT
-				  if(sel_x > 0) {
-					  sel_x--;
-					  draw_cursor(sel_x + 1, sel_y, sel_x, sel_y);
-				  }
-			  } else if (*SERIAL_DATA_LOC == 'd') { // MOVE RIGHT
-				  if(sel_x < DIMENSION_OF_MAP) {
-					  sel_x++;
-					  draw_cursor(sel_x - 1, sel_y, sel_x, sel_y);
-				  }
-			  }
-			  printf("data: %c\n", *SERIAL_DATA_LOC);
+	     player_attack(0);
+	     player_attack(1);
+		 move_menu();
 
 	/*	CurrentPlayer = CurrentPlayer ^ 1;
 		TurnDone = 0;
