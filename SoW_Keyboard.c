@@ -38,6 +38,15 @@
 
   }
 
+  void keyboard_enable_ISR(void)
+  {
+  	if(alt_irq_register(KEYBOARD_IRQ, NULL, keyboard_read) == 0)
+  		printf("IRQ Registered\n");
+  	else
+  		printf("IRQ Not Registered\n");
+  	alt_up_audio_enable_write_interrupt(ps2);
+  }
+
 
 
 /*int main()
@@ -68,4 +77,13 @@
 
   return 0;
 }*/
+
+ /* void keyboard_enable_ISR(void)
+  {
+  	if(alt_irq_register(KEYBOARD_IRQ, NULL, keyboard_read) == 0)
+  		printf("IRQ Registered\n");
+  	else
+  		printf("IRQ Not Registered\n");
+  	alt_up_audio_enable_write_interrupt(ps2);
+  }*/
 
