@@ -1,5 +1,5 @@
-#include "altera_up_avalon_audio_and_video_config.h"
-#include "altera_up_avalon_audio.h"
+//#include "altera_up_avalon_audio_and_video_config.h"
+//#include "altera_up_avalon_audio.h"
 #include <altera_up_avalon_ps2.h>
 #include <altera_up_ps2_keyboard.h>
 #include "alt_types.h"
@@ -8,7 +8,7 @@
 #include "altera_up_avalon_video_pixel_buffer_dma.h"
 #include "altera_up_avalon_video_character_buffer_with_dma.h"
 #include <stdio.h>
-#include "Altera_UP_SD_Card_Avalon_Interface.h"
+//#include "Altera_UP_SD_Card_Avalon_Interface.h"
 
 /* Defines */
 #define	FALSE 0
@@ -24,7 +24,7 @@
 #define KEYBOARD_IRQ 7
 
 /* SYSTEM NAMES*/
-#define RS232_NAME "uart_0"
+#define RS232_NAME "/dev/rs232_0"
 
 /* MEMORY LOCATIONS */
 #define SERIAL_DATA_LOC (alt_u8 *) 0x0
@@ -34,18 +34,15 @@
 #define KEY_BASE 0x4078
 
 /* MAP DEFINITIONS */
-#define SIZE_OF_TILE 16
-#define SIZE_OF_MAP 128
+#define SIZE_OF_TILE     16
+#define SIZE_OF_MAP      128
 #define DIMENSION_OF_MAP 8
-#define MAP_CORNER_X 96
-#define MAP_CORNER_Y 56
+#define MAP_CORNER_X     96
+#define MAP_CORNER_Y     56
 #define CHARS_PER_PLAYER 3
-#define NO_PLAYERS 2
+#define NO_PLAYERS       2
 
 char *KeyInput;
-
-
-
 
 typedef struct {
 int x;
@@ -61,6 +58,7 @@ position pos;
 int hp;
 int atk;
 int def;
+int colour;
 } character;
 
 typedef struct {
@@ -74,6 +72,7 @@ void keyboard_read(void);
 void audio_init(void);
 void audio_play(void);
 
+int serial_write(alt_u8);
 void read_serial();
 void read_serial_ISR(void* context, alt_u32 id);
 void draw_menu(void);

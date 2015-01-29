@@ -52,6 +52,9 @@ void show_menu() {
 
 	  draw_menu();
 	  move_arrow(menu, menu);
+	  serial_port = alt_up_rs232_open_dev(RS232_NAME);
+	  // Clear FIFO
+	  alt_up_rs232_read_data(serial_port, SERIAL_DATA_LOC, SERIAL_PAR_LOC);
 
 	  while(1){
 		  while(alt_up_rs232_read_data(serial_port, SERIAL_DATA_LOC, SERIAL_PAR_LOC) == -1){
@@ -72,7 +75,7 @@ void show_menu() {
 			  if(menu == INSTR) {
 				  show_instructions();
 			  } else {
-				  show_game();
+				  play_game();
 			  }
 			  draw_menu();
 			  move_arrow(menu, menu);
