@@ -1,6 +1,4 @@
 #include "SoW.h"
-#include "altera_up_avalon_audio_and_video_config.h"
-#include "altera_up_avalon_audio.h"
 
 
 char* FileSelect;
@@ -13,7 +11,12 @@ int MusicDataCount;
 alt_up_audio_dev *audio;
 
 
-
+void music_GO(char * File)
+{
+	music_load(File);
+	audio_init();
+	music_enable_ISR();
+}
 
 void music_load(char * File)
 {
