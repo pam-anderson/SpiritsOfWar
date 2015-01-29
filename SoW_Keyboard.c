@@ -38,14 +38,36 @@
 
   }
 
+  void keyboard_ISR(void * context, alt_u32 id)
+  {
+	 char c;
+  	 while(1)
+  	 {
+  		 if(decode_scancode(ps2, &code_type, &buff, &ascii) == 0)
+  		 {
+  			 if(code_type == KB_ASCII_MAKE_CODE)
+  			 {
+  				 translate_make_code(code_type, buff, KeyInput);
+  				 printf("%c\n", *KeyInput);
+
+  		  		 return;
+  			}
+  		 }
+
+  	 }
+
+  }
+
   void keyboard_enable_ISR(void)
   {
-  	if(alt_irq_register(KEYBOARD_IRQ, NULL, keyboard_read) == 0)
+  	if(alt_irq_register(KEYBOARD_IRQ, NULL, keyboard_ISR) == 0)
   		printf("IRQ Registered\n");
   	else
   		printf("IRQ Not Registered\n");
   	alt_up_audio_enable_write_interrupt(ps2);
   }
+
+
 
 
 
