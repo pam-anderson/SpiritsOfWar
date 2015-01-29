@@ -1,0 +1,11 @@
+# Ignore everything
+*
+
+# Don't ignore these files
+!.gitignore
+!*.c
+!*.h
+!*.qsys
+!*.vhd
+!Exercises/*
+!software/*
