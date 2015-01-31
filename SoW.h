@@ -46,16 +46,20 @@
 
 char *KeyInput;
 
-
-
-
 typedef struct {
 int x;
 int y;
 } position;
 
+typedef enum {
+CHARACTER,
+GRASS,
+WATER
+} sprite;
+
 typedef struct {
 position pos;
+sprite type;
 } game_tile;
 
 typedef struct {
@@ -68,6 +72,8 @@ int colour;
 
 typedef struct {
 character characters[CHARS_PER_PLAYER];
+position upper_boundary; // Territory in which can position players
+position lower_boundary;
 } player[2];
 
 /* Functions defined by startup code */
@@ -79,8 +85,8 @@ void audio_init(void);
 void audio_play(void);
 
 int serial_write(alt_u8);
-void read_serial();
-void read_serial_ISR(void* context, alt_u32 id);
+void serial_read();
+void serial_read_ISR(void* context, alt_u32 id);
 void draw_menu(void);
 void move_arrow(int curr_position, int new_position);
 void show_instructions(void);
