@@ -8,6 +8,7 @@ player Players[NO_PLAYERS];
 int CurrentPlayer = 1;
 int CurrentCharacter = 0;
 int colours[NO_PLAYERS][CHARS_PER_PLAYER] = {{0xF808, 0x7E0, 0x1F,},{ 0xE700, 0xE70, 0xE7 }};
+int start_pos[NO_PLAYERS][CHARS_PER_PLAYER][2] = {{{0, 6}, {0, 7}, {1, 7}}, {{6, 0}, {7, 0}, {7, 1}}};
 
 #define MAX_SPACES_MOVE 3
 #define DEFAULT_HP 		10
@@ -110,12 +111,14 @@ void draw_cursor(int old_x, int old_y, int new_x, int new_y, int colour) {
 }
 
 void move_player(int player_id, int char_id, int old_x, int old_y, int new_x, int new_y) {
-	// Erase old selection
+	// Erase old position
 	map[old_x][old_y].type = GRASS;
+	map[old_x][old_y].occupied_by = NULL;
 	alt_up_pixel_buffer_dma_draw_box(pixel_buffer, map[old_x][old_y].pos.x + 1, map[old_x][old_y].pos.y + 1,
 			map[old_x][old_y].pos.x + SIZE_OF_TILE - 1, map[old_x][old_y].pos.y + SIZE_OF_TILE - 1, 0x4321, 0);
-	// Highlight new selection
+	// Place player in new selection
 	map[new_x][new_y].type = CHARACTER;
+	map[new_x][new_y].occupied_by = &Players[player_id]->characters[char_id];
 	alt_up_pixel_buffer_dma_draw_box(pixel_buffer, map[new_x][new_y].pos.x + 1, map[new_x][new_y].pos.y + 1,
 			map[new_x][new_y].pos.x + SIZE_OF_TILE - 1, map[new_x][new_y].pos.y + SIZE_OF_TILE - 1,
 			Players[player_id]->characters[char_id].colour, 0);
@@ -130,32 +133,8 @@ void initialize_players() {
 	int healthbar_x;
 	int healthbar_y = 20;
 
-	Players[0]->characters[0].pos.x = 0;
-	Players[0]->characters[0].pos.y = 6;           //        [ ][ ] [ ][ ] [ ][ ] [0][1]
-	                                               //        [ ][ ] [ ][ ] [ ][ ] [ ][2]
-	                                               //        [ ][ ] [ ][ ] [ ][ ] [ ][ ]
-	Players[0]->characters[1].pos.x = 0;	       //        [ ][ ] [ ][ ] [ ][ ] [ ][ ]
-	Players[0]->characters[1].pos.y = 7;	       //        [ ][ ] [ ][ ] [ ][ ] [ ][ ]
-	                                    	       //        [ ][ ] [ ][ ] [ ][ ] [ ][ ]
-	Players[0]->characters[2].pos.x = 1;           //        [0][ ] [ ][ ] [ ][ ] [ ][ ]
-	Players[0]->characters[2].pos.y = 7;		   //        [1][2] [ ][ ] [ ][ ] [ ][ ]
-
-	Players[1]->characters[0].pos.x = 6;
-	Players[1]->characters[0].pos.y = 0;
-
-	Players[1]->characters[1].pos.x = 7;
-	Players[1]->characters[1].pos.y = 0;
-
-	Players[1]->characters[2].pos.x = 7;
-	Players[1]->characters[2].pos.y = 1;
-
-	map[0][7].type = CHARACTER;
-	map[0][6].type = CHARACTER;
-	map[1][7].type = CHARACTER;
-	map[7][0].type = CHARACTER;
-	map[6][0].type = CHARACTER;
-	map[7][1].type = CHARACTER;
-
+	// The boundaries determine the area where players can position their characters
+	// when starting the game.
 	Players[0]->lower_boundary.x = 0;
 	Players[0]->upper_boundary.x = DIMENSION_OF_MAP/2 - 1;
 	Players[0]->lower_boundary.y = DIMENSION_OF_MAP/2;
@@ -174,6 +153,11 @@ void initialize_players() {
 			Players[i]->characters[j].atk = DEFAULT_ATTACK;
 			Players[i]->characters[j].def = DEFAULT_DEFENSE;
 			Players[i]->characters[j].colour = colours[i][j];
+
+			Players[i]->characters[j].pos.x = start_pos[i][j][0];
+			Players[i]->characters[j].pos.y = start_pos[i][j][1];
+			move_player(i, j, 0, 0, start_pos[i][j][0], start_pos[i][j][1]);
+
 			x = Players[i]->characters[j].pos.x;
 			y = Players[i]->characters[j].pos.y;
 
@@ -233,10 +217,12 @@ void position_characters(int player_id)
 int is_valid_move(int player_id, int character_id, int x, int y) {
 	int total = 0;
 
-	if(map[x][y].type != GRASS) {
+	// Is the map occupied by another player or is it a grass tile?
+	if((map[x][y].type != GRASS) && (map[x][y].occupied_by != &Players[player_id]->characters[character_id])) {
 		return 0;
 	}
 
+	// Is the total spaces to move no more than the maximum allowed spaces to move?
 	total = abs(Players[player_id]->characters[character_id].pos.x - x);
 	total += abs(Players[player_id]->characters[character_id].pos.y - y);
 	if(total <= MAX_SPACES_MOVE) {
@@ -249,7 +235,6 @@ int is_valid_move(int player_id, int character_id, int x, int y) {
 void move_menu(int player_id, int character_id) {
 	int sel_x = Players[player_id]->characters[character_id].pos.x;
 	int sel_y = Players[player_id]->characters[character_id].pos.y;
-
 	keypress move = get_player_input(SERIAL);
 
 	while(1) {
@@ -276,7 +261,7 @@ void move_menu(int player_id, int character_id) {
 		} else if (move == ENTER) {
 			move_player(player_id, character_id, Players[player_id]->characters[character_id].pos.x,
 					Players[player_id]->characters[character_id].pos.y, sel_x, sel_y);
-			draw_cursor(sel_x - 1, sel_y, sel_x, sel_y, 0x3579);
+			draw_cursor(sel_x, sel_y, sel_x, sel_y, 0x3579);
 			Players[player_id]->characters[character_id].pos.x = sel_x;
 			Players[player_id]->characters[character_id].pos.y = sel_y;
 			break;
@@ -303,7 +288,7 @@ void play_game() {
 					 if (current_move == MOVE) {
 						 move_menu(player_id, character_id);
 					 } else {
-						 //attack
+					//	 attack_menu(player_id, character_id);
 					 }
 				 }
 			 }

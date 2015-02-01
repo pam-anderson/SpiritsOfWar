@@ -59,16 +59,17 @@ WATER
 
 typedef struct {
 position pos;
-sprite type;
-} game_tile;
-
-typedef struct {
-position pos;
 int hp;
 int atk;
 int def;
 int colour;
 } character;
+
+typedef struct {
+position pos;
+sprite type;
+character* occupied_by;
+} game_tile;
 
 typedef struct {
 character characters[CHARS_PER_PLAYER];
