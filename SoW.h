@@ -63,6 +63,8 @@ int hp;
 int atk;
 int def;
 int colour;
+int team;
+int id;
 } character;
 
 typedef struct {

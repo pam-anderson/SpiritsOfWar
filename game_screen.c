@@ -9,6 +9,7 @@ int CurrentPlayer = 1;
 int CurrentCharacter = 0;
 int colours[NO_PLAYERS][CHARS_PER_PLAYER] = {{0xF808, 0x7E0, 0x1F,},{ 0xE700, 0xE70, 0xE7 }};
 int start_pos[NO_PLAYERS][CHARS_PER_PLAYER][2] = {{{0, 6}, {0, 7}, {1, 7}}, {{6, 0}, {7, 0}, {7, 1}}};
+int healthbar_pos[NO_PLAYERS][CHARS_PER_PLAYER][2] = {{{29, 20}, {123, 20}, {217, 20}}, {{29, 204}, {123, 204}, {217, 204}}};
 
 #define MAX_SPACES_MOVE 3
 #define DEFAULT_HP 		10
@@ -97,7 +98,7 @@ void draw_healthbar(int x, int y, int colour) {
 	// Draw healthbar
 	alt_up_pixel_buffer_dma_draw_box(pixel_buffer, x + SIZE_OF_TILE/2 + 8, y, x + SIZE_OF_TILE/2 + 8 + HEALTHBAR_LEN,
 			y + SIZE_OF_TILE/2, 0xF822, 0);
-	alt_up_pixel_buffer_dma_draw_rectangle(pixel_buffer, x + SIZE_OF_TILE/2 + 8, y, x + SIZE_OF_TILE/2 + 8 + HEALTHBAR_LEN,
+	alt_up_pixel_buffer_dma_draw_rectangle(pixel_buffer, x + SIZE_OF_TILE/2 + 7, y, x + SIZE_OF_TILE/2 + 9 + HEALTHBAR_LEN,
 				y + SIZE_OF_TILE/2, 0xFFFF, 0);
 }
 
@@ -125,13 +126,10 @@ void move_player(int player_id, int char_id, int old_x, int old_y, int new_x, in
 }
 
 void initialize_players() {
-
 	int i;
 	int j;
 	int x;
 	int y;
-	int healthbar_x;
-	int healthbar_y = 20;
 
 	// The boundaries determine the area where players can position their characters
 	// when starting the game.
@@ -146,13 +144,13 @@ void initialize_players() {
 	Players[1]->upper_boundary.y = DIMENSION_OF_MAP/2 - 1;
 
 	for(i = 0; i < NO_PLAYERS; i++) {
-		healthbar_x = 29;
-
-		for(j = 0; j < CHARS_PER_PLAYER; j++, healthbar_x += 94) {
+		for(j = 0; j < CHARS_PER_PLAYER; j++) {
 			Players[i]->characters[j].hp = DEFAULT_HP;
 			Players[i]->characters[j].atk = DEFAULT_ATTACK;
 			Players[i]->characters[j].def = DEFAULT_DEFENSE;
 			Players[i]->characters[j].colour = colours[i][j];
+			Players[i]->characters[j].team = i;
+			Players[i]->characters[j].id = j;
 
 			Players[i]->characters[j].pos.x = start_pos[i][j][0];
 			Players[i]->characters[j].pos.y = start_pos[i][j][1];
@@ -164,9 +162,8 @@ void initialize_players() {
 			alt_up_pixel_buffer_dma_draw_box(pixel_buffer, map[x][y].pos.x + 1, map[x][y].pos.y + 1,
 					map[x][y].pos.x + SIZE_OF_TILE - 1, map[x][y].pos.y + SIZE_OF_TILE - 1,
 					Players[i]->characters[j].colour, 0);
-			draw_healthbar(healthbar_x, healthbar_y, Players[i]->characters[j].colour);
+			draw_healthbar(healthbar_pos[i][j][0], healthbar_pos[i][j][1], Players[i]->characters[j].colour);
 		}
-		healthbar_y = 204;
 	}
 }
 
@@ -270,6 +267,83 @@ void move_menu(int player_id, int character_id) {
 	}
 }
 
+int is_valid_attack(int player_id, int character_id, int x, int y) {
+	if (map[x][y].type != CHARACTER) {
+		// Tile must be occupied by a player to attack
+		return 0;
+	} else if (map[x][y].occupied_by->team == player_id) {
+		// Cannot attack teammate
+		return 0;
+	} else {
+		return 1;
+	}
+}
+
+void update_healthbar(int player_id, int character_id) {
+	// Black out health lost
+	int pixel_per_hp = HEALTHBAR_LEN / DEFAULT_HP;
+	int damage = DEFAULT_HP - Players[player_id]->characters[character_id].hp;
+	damage = damage * pixel_per_hp;
+	printf("damage in pixels:%d\n", damage);
+	alt_up_pixel_buffer_dma_draw_box(pixel_buffer,
+			healthbar_pos[player_id][character_id][0] + SIZE_OF_TILE/2 + 8 + HEALTHBAR_LEN - damage,
+			healthbar_pos[player_id][character_id][1] + 1,
+			healthbar_pos[player_id][character_id][0] + SIZE_OF_TILE/2 + 8 + HEALTHBAR_LEN,
+			healthbar_pos[player_id][character_id][1] + SIZE_OF_TILE/2 - 1, 0x0, 0);
+}
+
+void attack_player(int player_id, int character_id, int x, int y) {
+	if((x == Players[player_id]->characters[character_id].pos.x) &&
+			(y == Players[player_id]->characters[character_id].pos.y)) {
+		// If selecting self, it means player chose not to attack
+		return;
+	}
+	map[x][y].occupied_by->hp -= Players[player_id]->characters[character_id].atk;
+	if(map[x][y].occupied_by->hp < 0) {
+		// Cannot have negative health
+		map[x][y].occupied_by->hp = 0;
+	}
+	printf("Player %d character %d attacked player %d and caused %d damage.\n",
+			player_id, character_id, map[x][y].occupied_by->team, Players[player_id]->characters[character_id].atk);
+}
+
+void attack_menu(int player_id, int character_id) {
+	int sel_x = Players[player_id]->characters[character_id].pos.x;
+	int sel_y = Players[player_id]->characters[character_id].pos.y;
+	keypress move = get_player_input(SERIAL);
+
+	while(1) {
+		if (move == UP) {
+			if(is_valid_attack(player_id, character_id, sel_x, sel_y - 1)) {
+				sel_y--;
+				draw_cursor(sel_x, sel_y + 1, sel_x, sel_y, Players[player_id]->characters[character_id].colour);
+			}
+		} else if (move == DOWN) {
+			if(is_valid_attack(player_id, character_id, sel_x, sel_y + 1)) {
+				sel_y++;
+				draw_cursor(sel_x, sel_y - 1, sel_x, sel_y, Players[player_id]->characters[character_id].colour);
+			}
+		} else if (move == LEFT) {
+			if(is_valid_attack(player_id, character_id, sel_x - 1, sel_y)) {
+				sel_x--;
+				draw_cursor(sel_x + 1, sel_y, sel_x, sel_y, Players[player_id]->characters[character_id].colour);
+			}
+		} else if (move == RIGHT) {
+			if(is_valid_attack(player_id, character_id, sel_x + 1, sel_y)) {
+				sel_x++;
+				draw_cursor(sel_x - 1, sel_y, sel_x, sel_y, Players[player_id]->characters[character_id].colour);
+			}
+		} else if (move == ENTER) {
+			//attack_player();
+			draw_cursor(sel_x, sel_y, sel_x, sel_y, 0x3579);
+			attack_player(player_id, character_id, sel_x, sel_y);
+			update_healthbar(map[sel_x][sel_y].occupied_by->team, map[sel_x][sel_y].occupied_by->id);
+			break;
+		}
+		move = get_player_input(SERIAL);
+	}
+}
+
 void play_game() {
 	int player_id;
 	int character_id;
@@ -288,7 +362,7 @@ void play_game() {
 					 if (current_move == MOVE) {
 						 move_menu(player_id, character_id);
 					 } else {
-					//	 attack_menu(player_id, character_id);
+						 attack_menu(player_id, character_id);
 					 }
 				 }
 			 }
