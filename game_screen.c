@@ -271,6 +271,9 @@ int is_valid_attack(int player_id, int character_id, int x, int y) {
 	if (map[x][y].type != CHARACTER) {
 		// Tile must be occupied by a player to attack
 		return 0;
+	} else if (map[x][y].occupied_by == &Players[player_id]->characters[character_id]) {
+		// It is ok to move cursor back to self.
+		return 1;
 	} else if (map[x][y].occupied_by->team == player_id) {
 		// Cannot attack teammate
 		return 0;
@@ -284,7 +287,9 @@ void update_healthbar(int player_id, int character_id) {
 	int pixel_per_hp = HEALTHBAR_LEN / DEFAULT_HP;
 	int damage = DEFAULT_HP - Players[player_id]->characters[character_id].hp;
 	damage = damage * pixel_per_hp;
-	printf("damage in pixels:%d\n", damage);
+	if(damage == 0) {
+		return;
+	}
 	alt_up_pixel_buffer_dma_draw_box(pixel_buffer,
 			healthbar_pos[player_id][character_id][0] + SIZE_OF_TILE/2 + 8 + HEALTHBAR_LEN - damage,
 			healthbar_pos[player_id][character_id][1] + 1,
@@ -315,21 +320,25 @@ void attack_menu(int player_id, int character_id) {
 	while(1) {
 		if (move == UP) {
 			if(is_valid_attack(player_id, character_id, sel_x, sel_y - 1)) {
+				draw_cursor(sel_x, sel_y, sel_x, sel_y, 0x3579);
 				sel_y--;
 				draw_cursor(sel_x, sel_y + 1, sel_x, sel_y, Players[player_id]->characters[character_id].colour);
 			}
 		} else if (move == DOWN) {
 			if(is_valid_attack(player_id, character_id, sel_x, sel_y + 1)) {
+				draw_cursor(sel_x, sel_y, sel_x, sel_y, 0x3579);
 				sel_y++;
 				draw_cursor(sel_x, sel_y - 1, sel_x, sel_y, Players[player_id]->characters[character_id].colour);
 			}
 		} else if (move == LEFT) {
 			if(is_valid_attack(player_id, character_id, sel_x - 1, sel_y)) {
+				draw_cursor(sel_x, sel_y, sel_x, sel_y, 0x3579);
 				sel_x--;
 				draw_cursor(sel_x + 1, sel_y, sel_x, sel_y, Players[player_id]->characters[character_id].colour);
 			}
 		} else if (move == RIGHT) {
 			if(is_valid_attack(player_id, character_id, sel_x + 1, sel_y)) {
+				draw_cursor(sel_x, sel_y, sel_x, sel_y, 0x3579);
 				sel_x++;
 				draw_cursor(sel_x - 1, sel_y, sel_x, sel_y, Players[player_id]->characters[character_id].colour);
 			}
