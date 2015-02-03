@@ -7,5 +7,6 @@
 !*.h
 !*.qsys
 !*.vhd
+!*.tcl
 !Exercises/*
 !software/*
