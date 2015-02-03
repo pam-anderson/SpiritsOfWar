@@ -68,9 +68,11 @@ int id;
 } character;
 
 typedef struct {
+position coords;
 position pos;
 sprite type;
 character* occupied_by;
+int explored; // Used in DFS
 } game_tile;
 
 typedef struct {

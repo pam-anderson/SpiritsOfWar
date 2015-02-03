@@ -8,7 +8,9 @@ player Players[NO_PLAYERS];
 int CurrentPlayer = 1;
 int CurrentCharacter = 0;
 int colours[NO_PLAYERS][CHARS_PER_PLAYER] = {{0xF808, 0x7E0, 0x1F,},{ 0xE700, 0xE70, 0xE7 }};
+/* Start grids of characters */
 int start_pos[NO_PLAYERS][CHARS_PER_PLAYER][2] = {{{0, 6}, {0, 7}, {1, 7}}, {{6, 0}, {7, 0}, {7, 1}}};
+/* Coordinates of top left corner of health bar */
 int healthbar_pos[NO_PLAYERS][CHARS_PER_PLAYER][2] = {{{29, 20}, {123, 20}, {217, 20}}, {{29, 204}, {123, 204}, {217, 204}}};
 
 #define MAX_SPACES_MOVE 3
@@ -85,6 +87,8 @@ void show_game(void) {
 			}
 			map[x][y].pos.x = x_coord;
 			map[x][y].pos.y = y_coord;
+			map[x][y].coords.x = x;
+			map[x][y].coords.y = y;
 			map[x][y].type = GRASS;
 		}
 	}
@@ -211,47 +215,123 @@ void position_characters(int player_id)
 	}
 }
 
-int is_valid_move(int player_id, int character_id, int x, int y) {
-	int total = 0;
-
-	// Is the map occupied by another player or is it a grass tile?
-	if((map[x][y].type != GRASS) && (map[x][y].occupied_by != &Players[player_id]->characters[character_id])) {
-		return 0;
-	}
-
-	// Is the total spaces to move no more than the maximum allowed spaces to move?
-	total = abs(Players[player_id]->characters[character_id].pos.x - x);
-	total += abs(Players[player_id]->characters[character_id].pos.y - y);
-	if(total <= MAX_SPACES_MOVE) {
+int tile_is_free(int x, int y) {
+	if ((0 <= x) && (x < DIMENSION_OF_MAP ) && (0 <= y) && (y < DIMENSION_OF_MAP) && (map[x][y].type == GRASS) &&
+			(map[x][y].explored == 0)) {
 		return 1;
 	} else {
 		return 0;
 	}
 }
 
+// Depth first search on current node 3 levels to get valid moves
+void get_valid_moves(int player_id, int character_id, int x, int y, game_tile** valid_moves) {
+	int level;
+	int i;
+	int j = 0;
+	int k = 1;
+	int dir;
+	game_tile** neighbour;
+	game_tile** curr;
+	game_tile** tmp;
+
+	neighbour = (game_tile**) calloc(25 , sizeof(game_tile*));
+	curr = (game_tile**) calloc(25 , sizeof(game_tile*));
+	curr[0] = &map[x][y];
+	valid_moves[0] = curr[0];
+
+	// Depth first search on tiles down three levels to get available moves
+	for(level = 0; level < MAX_SPACES_MOVE; level++) {
+		// Search each queued neighbour
+		j = 0;
+		for(i = 0; curr[i] != 0; i++) {
+			// Check every neighbour of current tile to see if it would be a valid move
+			for(dir = 0; dir < 4; dir++) {
+				if(dir == 0) { // LEFT
+					if (tile_is_free(curr[i]->coords.x - 1, curr[i]->coords.y) == TRUE) {
+						map[curr[i]->coords.x - 1][curr[i]->coords.y].explored = 1;
+						neighbour[j] = &map[curr[i]->coords.x - 1][curr[i]->coords.y];
+						valid_moves[k] = neighbour[j];
+						k++;
+						j++;
+					}
+				} else if(dir == 1) {// RIGHTS
+					if (tile_is_free(curr[i]->coords.x + 1, curr[i]->coords.y) == TRUE) {
+						map[curr[i]->coords.x + 1][curr[i]->coords.y].explored = 1;
+						neighbour[j] = &map[curr[i]->coords.x + 1][curr[i]->coords.y];
+						valid_moves[k] = neighbour[j];
+						k++;
+						j++;
+					}
+				} else if(dir == 2) { //UP
+					if (tile_is_free(curr[i]->coords.x, curr[i]->coords.y - 1) == TRUE) {
+						map[curr[i]->coords.x][curr[i]->coords.y - 1].explored = 1;
+						neighbour[j] = &map[curr[i]->coords.x][curr[i]->coords.y - 1];
+						valid_moves[k] = neighbour[j];
+						k++;
+						j++;
+					}
+				} else { //DOWN
+					if (tile_is_free(curr[i]->coords.x, curr[i]->coords.y + 1) == TRUE) {
+						map[curr[i]->coords.x][curr[i]->coords.y + 1].explored = 1;
+						neighbour[j] = &map[curr[i]->coords.x][curr[i]->coords.y + 1];
+						valid_moves[k] = neighbour[j];
+						k++;
+						j++;
+					}
+					curr[i] = NULL;
+				}
+			}
+		}
+		tmp = curr;
+		curr = neighbour;
+		neighbour = tmp;
+	}
+	free(neighbour);
+	free(curr);
+}
+
+
+
+int is_valid_move(int x, int y, game_tile** moves) {
+	int total = 0;
+	int i;
+
+	for(i = 0; moves[i] != 0; i++) {
+		if (&map[x][y] == moves[i]) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
 void move_menu(int player_id, int character_id) {
+	int i;
 	int sel_x = Players[player_id]->characters[character_id].pos.x;
 	int sel_y = Players[player_id]->characters[character_id].pos.y;
+	game_tile** valid_moves;
+	valid_moves = (game_tile**) calloc(25, sizeof(game_tile*));
+	get_valid_moves(player_id, character_id, sel_x, sel_y, valid_moves);
 	keypress move = get_player_input(SERIAL);
 
 	while(1) {
 		if (move == UP) {
-			if((sel_y > 0) && is_valid_move(player_id, character_id, sel_x, sel_y - 1)) {
+			if((sel_y > 0) && is_valid_move(sel_x, sel_y - 1, valid_moves)) {
 				sel_y--;
 				draw_cursor(sel_x, sel_y + 1, sel_x, sel_y, Players[player_id]->characters[character_id].colour);
 			}
 		} else if (move == DOWN) {
-			if((sel_y < DIMENSION_OF_MAP - 1) && is_valid_move(player_id, character_id, sel_x, sel_y + 1)) {
+			if((sel_y < DIMENSION_OF_MAP - 1) && is_valid_move(sel_x, sel_y + 1, valid_moves)) {
 				sel_y++;
 				draw_cursor(sel_x, sel_y - 1, sel_x, sel_y, Players[player_id]->characters[character_id].colour);
 			}
 		} else if (move == LEFT) {
-			if((sel_x > 0) && is_valid_move(player_id, character_id, sel_x - 1, sel_y)) {
+			if((sel_x > 0) && is_valid_move(sel_x - 1, sel_y, valid_moves)) {
 				sel_x--;
 				draw_cursor(sel_x + 1, sel_y, sel_x, sel_y, Players[player_id]->characters[character_id].colour);
 			}
 		} else if (move == RIGHT) {
-			if((sel_x < DIMENSION_OF_MAP - 1) && is_valid_move(player_id, character_id, sel_x + 1, sel_y)) {
+			if((sel_x < DIMENSION_OF_MAP - 1) && is_valid_move(sel_x + 1, sel_y, valid_moves)) {
 				sel_x++;
 				draw_cursor(sel_x - 1, sel_y, sel_x, sel_y, Players[player_id]->characters[character_id].colour);
 			}
@@ -265,6 +345,11 @@ void move_menu(int player_id, int character_id) {
 		}
 		move = get_player_input(SERIAL);
 	}
+
+	for(i = 0; valid_moves[i] == 0; i++) {
+		valid_moves[i]->explored = 0;
+	}
+	free(valid_moves);
 }
 
 int is_valid_attack(int player_id, int character_id, int x, int y) {
