@@ -62,6 +62,7 @@ position pos;
 int hp;
 int atk;
 int def;
+int rng;
 int colour;
 int team;
 int id;
@@ -79,6 +80,7 @@ typedef struct {
 character characters[CHARS_PER_PLAYER];
 position upper_boundary; // Territory in which can position players
 position lower_boundary;
+int characters_remaining;
 } player[2];
 
 /* Functions defined by startup code */
