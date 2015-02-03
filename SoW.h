@@ -9,6 +9,7 @@
 #include "altera_up_avalon_video_character_buffer_with_dma.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include "io.h"
 #include "Altera_UP_SD_Card_Avalon_Interface.h"
 
 /* Defines */
@@ -31,7 +32,7 @@
 /* MEMORY LOCATIONS */
 #define SERIAL_DATA_LOC (alt_u8 *) 0x0
 #define SERIAL_PAR_LOC (alt_u8 *) 0x4
-
+#define DRAWER_BASE (volatile int*) 0x4420
 #define SERIAL_BASE (volatile int *) 0x4470
 #define KEY_BASE 0x4078
 
@@ -52,9 +53,9 @@ int y;
 } position;
 
 typedef enum {
-CHARACTER,
 GRASS,
-WATER
+WATER,
+CHARACTER
 } sprite;
 
 typedef struct {

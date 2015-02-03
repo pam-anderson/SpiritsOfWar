@@ -62,6 +62,14 @@ keypress get_player_input(int type) {
 	}
 }
 
+void draw_sprite(int x, int y, sprite type) {
+	IOWR_32DIRECT(DRAWER_BASE, 0, x);
+	IOWR_32DIRECT(DRAWER_BASE, 4, y);
+	IOWR_32DIRECT(DRAWER_BASE, 8, type);
+	IOWR_32DIRECT(DRAWER_BASE, 12, 1); //Start
+	while(IORD_32DIRECT(DRAWER_BASE, 24) == 0) {}
+}
+
 /*
  * @brief Draw map to screen.
  */
@@ -89,6 +97,7 @@ void show_game(void) {
 			map[x][y].coords.x = x;
 			map[x][y].coords.y = y;
 			map[x][y].type = GRASS;
+			draw_sprite(x_coord, y_coord, GRASS);
 		}
 	}
 	alt_up_pixel_buffer_dma_draw_line(pixel_buffer, x_coord, y_coord, x_coord, y_coord - SIZE_OF_MAP, 0x3579, 0);
