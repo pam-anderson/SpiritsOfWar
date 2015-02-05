@@ -268,9 +268,6 @@ int dfs_map(int x, int y, int levels, game_tile** valid_moves) {
 		curr = neighbour;
 		neighbour = tmp;
 	}
-	/*for(i = 0; i < k; i++) {
-		map[valid_moves[k]->coords.x][valid_moves[k]->coords.y + 1].explored = 1;
-	}*/
 	free(neighbour);
 	free(curr);
 	return k;
@@ -405,7 +402,6 @@ void attack_player(int player_id, int character_id, int x, int y) {
 		map[x][y].occupied_by->hp = 0;
 		character_is_dead(map[x][y].occupied_by->team, map[x][y].occupied_by->id);
 	}
-	printf("attacked %d %d ", x, y);
 	printf("Player %d character %d attacked player %d and caused %d damage.\n",
 			player_id, character_id, map[x][y].occupied_by->team, Players[player_id]->characters[character_id].atk);
 }
@@ -435,10 +431,6 @@ void attack_menu(int player_id, int character_id) {
 					Players[player_id]->characters[character_id].colour);
 			attack_player(player_id, character_id, valid_attacks[i]->coords.x, valid_attacks[i]->coords.y);
 			update_healthbar(valid_attacks[i]->occupied_by->team, valid_attacks[i]->occupied_by->id);
-			break;
-		}
-		move = get_player_input(SERIAL);
-	}
 	free(valid_attacks);
 }
 
