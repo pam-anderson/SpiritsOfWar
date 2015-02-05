@@ -40,7 +40,7 @@ char *KeyInput;
 
 /* Functions defined by startup code */
 void keyboard_init(void);
-void keyboard_read(void);
+char* keyboard_read(void);
 void keyboard_enable_ISR(void);
 
 void audio_init(void);

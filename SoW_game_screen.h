@@ -14,12 +14,12 @@
 #define RANGER_HP 		12
 #define RANGER_ATTACK	4
 #define RANGER_DEFENSE	4
-#define RANGER_RANGE    3
+#define RANGER_RANGE    2
 
 #define MAGE_HP 		10
 #define MAGE_ATTACK	    4
 #define MAGE_DEFENSE	2
-#define MAGE_RANGE      2
+#define MAGE_RANGE      3
 
 /* MAP DEFINITIONS */
 #define SIZE_OF_TILE 	16
@@ -77,8 +77,8 @@ int atk;
 int def;
 int rng;
 int colour;
-int team;
-int id;
+int team; // Player ID
+int id;   // Character ID
 } character;
 
 typedef struct {
