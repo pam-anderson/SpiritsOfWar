@@ -123,7 +123,88 @@ void draw_cursor(int old_x, int old_y, int new_x, int new_y, int colour) {
 			map[new_x][new_y].pos.x + SIZE_OF_TILE, map[new_x][new_y].pos.y + SIZE_OF_TILE, colour, 0);
 }
 
+void init_timer() {
+	int timer_period = 0.6 * 50000000;
+	IOWR_16DIRECT(TIMER_BASE, 8, timer_period & 0xFFFF);
+	IOWR_16DIRECT(TIMER_BASE, 12, timer_period >> 16);
+	printf(" Stopping Timer\n");
+	int status = IORD_16DIRECT(TIMER_BASE, 0);
+	if (status & 0x2) {
+	IOWR_16DIRECT(TIMER_BASE, 4, 1 << 3);
+	}
+}
+
+void animate_to_tile(int colour, int dx, int dy, int old_x, int old_y, int new_x, int new_y) {
+	int i = 0;
+	for(i = 0; i < 16; i++) {
+		init_timer();
+		printf(" Starting Timer\n");
+		IOWR_16DIRECT(TIMER_BASE, 4, 1 << 2);
+		draw_sprite(map[old_x][old_y].pos.x, map[old_x][old_y].pos.y, GRASS);
+		draw_sprite(map[new_x][new_y].pos.x, map[new_x][new_y].pos.y, GRASS);
+		alt_up_pixel_buffer_dma_draw_box(pixel_buffer, map[old_x][old_y].pos.x + 1 + i * dx, map[old_x][old_y].pos.y + i * dy,
+				map[old_x][old_y].pos.x + SIZE_OF_TILE - 1 + i * dx, map[old_x][old_y].pos.y + SIZE_OF_TILE - 1 + i * dy,
+				colour, 0);
+		printf(" Waiting for timer to expire...\n");
+		int done = 0;
+		while (! done) {
+			int status = IORD_16DIRECT(TIMER_BASE, 0);
+			done = status & 0x1;
+		}
+	}
+}
+
+void animate(int colour, int old_x, int old_y, int new_x, int new_y) {
+	init_timer();
+	printf(" Starting Timer\n");
+	IOWR_16DIRECT(TIMER_BASE, 4, 1 << 2);
+
+	while(old_x != new_x && old_y != new_y) {
+			if(old_x < new_x && map[old_x + 1][old_y].occupied_by == NULL) {
+				animate_to_tile(colour, 1, 0, old_x, old_y, new_x, new_y);
+				old_x++;
+			}
+			else if(old_x > new_x && map[old_x - 1][old_y].occupied_by == NULL) {
+				animate_to_tile(colour, -1, 0, old_x, old_y, new_x, new_y);
+				old_x--;
+			}
+			else if(old_y > new_y && map[old_x][old_y - 1].occupied_by == NULL) {
+				animate_to_tile(colour, 0, -1, old_x, old_y, new_x, new_y);
+				old_y--;
+			}
+			else if(old_y < new_y && map[old_x][old_y + 1].occupied_by == NULL) {
+				animate_to_tile(colour, 0, 1, old_x, old_y, new_x, new_y);
+				old_y++;
+			}
+
+		}
+	alt_up_pixel_buffer_dma_draw_box(pixel_buffer, map[new_x][new_y].pos.x + 1, map[new_x][new_y].pos.y + 1,
+			map[new_x][new_y].pos.x + SIZE_OF_TILE - 1, map[new_x][new_y].pos.y + SIZE_OF_TILE - 1,
+			colour, 0);
+}
+
 void move_player(int player_id, int char_id, int old_x, int old_y, int new_x, int new_y) {
+	// Erase old position
+	map[old_x][old_y].type = GRASS;
+	map[old_x][old_y].occupied_by = NULL;
+	//alt_up_pixel_buffer_dma_draw_box(pixel_buffer, map[old_x][old_y].pos.x + 1, map[old_x][old_y].pos.y + 1,
+	//		map[old_x][old_y].pos.x + SIZE_OF_TILE - 1, map[old_x][old_y].pos.y + SIZE_OF_TILE - 1, 0x4321, 0);
+
+	if((new_x == -1) || (new_y == -1)) {
+		return;
+	}
+
+	animate(Players[player_id]->characters[char_id].colour, old_x, old_y, new_x, new_y);
+
+	// Place player in new selection
+	map[new_x][new_y].type = CHARACTER;
+	map[new_x][new_y].occupied_by = &Players[player_id]->characters[char_id];
+	//alt_up_pixel_buffer_dma_draw_box(pixel_buffer, map[new_x][new_y].pos.x + 1, map[new_x][new_y].pos.y + 1,
+	//		map[new_x][new_y].pos.x + SIZE_OF_TILE - 1, map[new_x][new_y].pos.y + SIZE_OF_TILE - 1,
+	//		Players[player_id]->characters[char_id].colour, 0);
+}
+
+/*void move_player(int player_id, int char_id, int old_x, int old_y, int new_x, int new_y) {
 	// Erase old position
 	map[old_x][old_y].type = GRASS;
 	map[old_x][old_y].occupied_by = NULL;
@@ -139,7 +220,7 @@ void move_player(int player_id, int char_id, int old_x, int old_y, int new_x, in
 	alt_up_pixel_buffer_dma_draw_box(pixel_buffer, map[new_x][new_y].pos.x + 1, map[new_x][new_y].pos.y + 1,
 			map[new_x][new_y].pos.x + SIZE_OF_TILE - 1, map[new_x][new_y].pos.y + SIZE_OF_TILE - 1,
 			Players[player_id]->characters[char_id].colour, 0);
-}
+}*/
 
 void initialize_players() {
 	int i;
@@ -326,6 +407,11 @@ void move_menu(int player_id, int character_id) {
 	game_tile** valid_moves;
 	valid_moves = (game_tile**) calloc(25, sizeof(game_tile*));
 	get_valid_moves(player_id, character_id, sel_x, sel_y, valid_moves);
+	for(i = 0; valid_moves[i] != 0; i++) {
+		draw_sprite(valid_moves[i]->pos.x, valid_moves[i]->pos.y, (GRASS | 0x08));
+	}
+
+
 	keypress move = get_player_input(SERIAL);
 
 	while(1) {
@@ -365,6 +451,53 @@ void move_menu(int player_id, int character_id) {
 	}
 	free(valid_moves);
 }
+
+/*void move_menu(int player_id, int character_id) {
+	int i;
+	int sel_x = Players[player_id]->characters[character_id].pos.x;
+	int sel_y = Players[player_id]->characters[character_id].pos.y;
+	game_tile** valid_moves;
+	valid_moves = (game_tile**) calloc(25, sizeof(game_tile*));
+	get_valid_moves(player_id, character_id, sel_x, sel_y, valid_moves);
+	keypress move = get_player_input(SERIAL);
+
+	while(1) {
+		if (move == UP) {
+			if((sel_y > 0) && is_valid_move(sel_x, sel_y - 1, valid_moves)) {
+				sel_y--;
+				draw_cursor(sel_x, sel_y + 1, sel_x, sel_y, Players[player_id]->characters[character_id].colour);
+			}
+		} else if (move == DOWN) {
+			if((sel_y < DIMENSION_OF_MAP - 1) && is_valid_move(sel_x, sel_y + 1, valid_moves)) {
+				sel_y++;
+				draw_cursor(sel_x, sel_y - 1, sel_x, sel_y, Players[player_id]->characters[character_id].colour);
+			}
+		} else if (move == LEFT) {
+			if((sel_x > 0) && is_valid_move(sel_x - 1, sel_y, valid_moves)) {
+				sel_x--;
+				draw_cursor(sel_x + 1, sel_y, sel_x, sel_y, Players[player_id]->characters[character_id].colour);
+			}
+		} else if (move == RIGHT) {
+			if((sel_x < DIMENSION_OF_MAP - 1) && is_valid_move(sel_x + 1, sel_y, valid_moves)) {
+				sel_x++;
+				draw_cursor(sel_x - 1, sel_y, sel_x, sel_y, Players[player_id]->characters[character_id].colour);
+			}
+		} else if (move == ENTER) {
+			move_player(player_id, character_id, Players[player_id]->characters[character_id].pos.x,
+					Players[player_id]->characters[character_id].pos.y, sel_x, sel_y);
+			draw_cursor(sel_x, sel_y, sel_x, sel_y, 0x3579);
+			Players[player_id]->characters[character_id].pos.x = sel_x;
+			Players[player_id]->characters[character_id].pos.y = sel_y;
+			break;
+		}
+		move = get_player_input(SERIAL);
+	}
+
+	for(i = 0; valid_moves[i] != 0; i++) {
+		valid_moves[i]->explored = 0;
+	}
+	free(valid_moves);
+}*/
 
 int is_valid_attack(int player_id, int character_id, int x, int y) {
 	if (map[x][y].type != CHARACTER) {

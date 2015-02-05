@@ -35,6 +35,7 @@
 #define DRAWER_BASE (volatile int*) 0x4420
 #define SERIAL_BASE (volatile int *) 0x4470
 #define KEY_BASE 0x4078
+#define TIMER_BASE 0x4000
 
 /* MAP DEFINITIONS */
 #define SIZE_OF_TILE 	16
@@ -100,6 +101,9 @@ void move_arrow(int curr_position, int new_position);
 void show_instructions(void);
 void show_menu(void);
 void show_game(void);
+void animate(int, int, int, int, int);
+void animate_to_tile(int, int, int, int, int, int, int);
+void init_timer(void);
 
 void sdcard_init() ;
 int sdcard_write_file(char* file_name, alt_u8* buffer, int size) ;
