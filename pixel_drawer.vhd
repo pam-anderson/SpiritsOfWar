@@ -134,7 +134,12 @@ begin
 					  master_addr <= std_logic_vector(unsigned(pixel_buffer_base) + unsigned( y1_local & x1_local & '0'));
 					  case tile_type is
 							when "00000" =>	colour_local := std_logic_vector(grass(count));
-							when others =>		colour_local := std_logic_vector(water(count));
+							when "00001" =>	colour_local := std_logic_vector(water(count));
+							when "01000" =>	colour_local := (std_logic_vector(grass(count)) OR x"001F");
+							when "10000" =>	colour_local := (std_logic_vector(grass(count)) OR x"F800");
+							when "01001" =>	colour_local := (std_logic_vector(water(count)) OR x"001F");
+							when "10001" =>	colour_local := (std_logic_vector(water(count)) OR x"F800");
+							when others =>		colour_local := std_logic_vector(grass(count));
 						end case;
                   master_writedata <= colour_local;
                   master_be <= "11";  -- byte enable
