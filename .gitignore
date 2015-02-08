@@ -10,3 +10,7 @@
 !*.tcl
 !Exercises/*
 !software/*
+!SlaveSystem/*.vhd
+!SlaveSystem/*.tcl
+!SlaveSystem/*.c
+!SlaveSystem/*.h
