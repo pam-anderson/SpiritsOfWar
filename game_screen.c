@@ -1,7 +1,5 @@
 #include "SoW.h"
-#include "altera_up_avalon_video_pixel_buffer_dma.h"
-#include "altera_up_avalon_video_character_buffer_with_dma.h"
-#include <stdio.h>
+#include "SoW_game_screen.h"
 
 game_tile map[DIMENSION_OF_MAP][DIMENSION_OF_MAP];
 player Players[NO_PLAYERS];
@@ -10,32 +8,10 @@ int colours[NO_PLAYERS][CHARS_PER_PLAYER] = {{0xF808, 0x7E0, 0x1F,},{ 0xE700, 0x
 int start_pos[NO_PLAYERS][CHARS_PER_PLAYER][2] = {{{0, 6}, {0, 7}, {1, 7}}, {{6, 0}, {7, 0}, {7, 1}}};
 /* Coordinates of top left corner of health bar */
 int healthbar_pos[NO_PLAYERS][CHARS_PER_PLAYER][2] = {{{29, 20}, {123, 20}, {217, 20}}, {{29, 204}, {123, 204}, {217, 204}}};
-
-#define MAX_SPACES_MOVE 3
-#define DEFAULT_HP 		10
-#define DEFAULT_ATTACK	3
-#define DEFAULT_DEFENSE	5
-#define DEFAULT_RANGE   1
-#define NO_MOVES        2
-#define ATK_RNG         1
-#define HEALTHBAR_LEN   50
-#define SERIAL          0
-#define KEYBOARD        1
-
-typedef enum {
-    MOVE,
-    ATTACK
-} character_option;
-
-typedef enum {
-	UP,
-	DOWN,
-	LEFT,
-	RIGHT,
-	ENTER,
-	ESC
-} keypress;
-
+class_defaults classes[NUM_OF_CLASSES] = {
+		{WARRIOR, WARRIOR_HP, WARRIOR_ATTACK, WARRIOR_DEFENSE, WARRIOR_RANGE},
+		{RANGER, RANGER_HP, RANGER_ATTACK, RANGER_DEFENSE, RANGER_RANGE},
+		{MAGE, MAGE_HP, MAGE_ATTACK, MAGE_DEFENSE, MAGE_RANGE} };
 
 keypress get_player_input(int type) {
 	if(type == SERIAL) {
@@ -82,16 +58,10 @@ void show_game(void) {
 	// Initialize screen. Clear everything.
 	alt_up_pixel_buffer_dma_clear_screen(pixel_buffer, 0);
 	alt_up_char_buffer_clear(char_buffer);
-	alt_up_pixel_buffer_dma_draw_box(pixel_buffer, MAP_CORNER_X, MAP_CORNER_Y, MAP_CORNER_X + SIZE_OF_MAP,
-			MAP_CORNER_Y + SIZE_OF_MAP, 0x4321, 0);
 
 	for(x = 0; x < DIMENSION_OF_MAP; x++, x_coord += SIZE_OF_TILE) {
 		y_coord = MAP_CORNER_Y;
-		alt_up_pixel_buffer_dma_draw_line(pixel_buffer, x_coord, y_coord, x_coord, y_coord + SIZE_OF_MAP, 0x3579, 0);
 		for(y = 0; y < DIMENSION_OF_MAP; y++, y_coord += SIZE_OF_TILE) {
-			if(x_coord == MAP_CORNER_X) {
-				alt_up_pixel_buffer_dma_draw_line(pixel_buffer, x_coord, y_coord, x_coord + SIZE_OF_MAP, y_coord, 0x3579, 0);
-			}
 			map[x][y].pos.x = x_coord;
 			map[x][y].pos.y = y_coord;
 			map[x][y].coords.x = x;
@@ -100,8 +70,6 @@ void show_game(void) {
 			draw_sprite(x_coord, y_coord, GRASS);
 		}
 	}
-	alt_up_pixel_buffer_dma_draw_line(pixel_buffer, x_coord, y_coord, x_coord, y_coord - SIZE_OF_MAP, 0x3579, 0);
-	alt_up_pixel_buffer_dma_draw_line(pixel_buffer, x_coord, y_coord, x_coord - SIZE_OF_MAP, y_coord, 0x3579, 0);
 }
 
 void draw_healthbar(int x, int y, int colour) {
@@ -243,10 +211,11 @@ void initialize_players() {
 	for(i = 0; i < NO_PLAYERS; i++) {
 		Players[i]->characters_remaining = CHARS_PER_PLAYER;
 		for(j = 0; j < CHARS_PER_PLAYER; j++) {
-			Players[i]->characters[j].hp = DEFAULT_HP;
-			Players[i]->characters[j].atk = DEFAULT_ATTACK;
-			Players[i]->characters[j].def = DEFAULT_DEFENSE;
-			Players[i]->characters[j].rng = DEFAULT_RANGE;
+			Players[i]->characters[j].hp = classes[j].hp;
+			Players[i]->characters[j].atk = classes[j].atk;
+			Players[i]->characters[j].def = classes[j].def;
+			Players[i]->characters[j].rng = classes[j].rng;
+			Players[i]->characters[j].class = classes[j].class;
 			Players[i]->characters[j].colour = colours[i][j];
 			Players[i]->characters[j].team = i;
 			Players[i]->characters[j].id = j;
@@ -310,8 +279,8 @@ void position_characters(int player_id)
 	}
 }
 
-int tile_is_free(int x, int y) {
-	if ((0 <= x) && (x < DIMENSION_OF_MAP ) && (0 <= y) && (y < DIMENSION_OF_MAP) && (map[x][y].type == GRASS) &&
+int is_tile_unvisited(int x, int y) {
+	if ((0 <= x) && (x < DIMENSION_OF_MAP ) && (0 <= y) && (y < DIMENSION_OF_MAP) &&
 			(map[x][y].explored == 0)) {
 		return 1;
 	} else {
@@ -319,12 +288,11 @@ int tile_is_free(int x, int y) {
 	}
 }
 
-// Depth first search on current node 3 levels to get valid moves
-void get_valid_moves(int player_id, int character_id, int x, int y, game_tile** valid_moves) {
-	int level;
+int dfs_map(int x, int y, int levels, game_tile** valid_moves) {
 	int i;
 	int j = 0;
 	int k = 1;
+	int level;
 	int dir;
 	game_tile** neighbour;
 	game_tile** curr;
@@ -336,22 +304,22 @@ void get_valid_moves(int player_id, int character_id, int x, int y, game_tile** 
 	valid_moves[0] = curr[0];
 
 	// Depth first search on tiles down three levels to get available moves
-	for(level = 0; level < MAX_SPACES_MOVE; level++) {
+	for(level = 0; level < levels; level++) {
 		// Search each queued neighbour
 		j = 0;
 		for(i = 0; curr[i] != 0; i++) {
 			// Check every neighbour of current tile to see if it would be a valid move
 			for(dir = 0; dir < 4; dir++) {
 				if(dir == 0) { // LEFT
-					if (tile_is_free(curr[i]->coords.x - 1, curr[i]->coords.y) == TRUE) {
+					if (is_tile_unvisited(curr[i]->coords.x - 1, curr[i]->coords.y) == TRUE) {
 						map[curr[i]->coords.x - 1][curr[i]->coords.y].explored = 1;
 						neighbour[j] = &map[curr[i]->coords.x - 1][curr[i]->coords.y];
 						valid_moves[k] = neighbour[j];
 						k++;
 						j++;
 					}
-				} else if(dir == 1) {// RIGHTS
-					if (tile_is_free(curr[i]->coords.x + 1, curr[i]->coords.y) == TRUE) {
+				} else if(dir == 1) {// RIGHT
+					if (is_tile_unvisited(curr[i]->coords.x + 1, curr[i]->coords.y) == TRUE) {
 						map[curr[i]->coords.x + 1][curr[i]->coords.y].explored = 1;
 						neighbour[j] = &map[curr[i]->coords.x + 1][curr[i]->coords.y];
 						valid_moves[k] = neighbour[j];
@@ -359,7 +327,7 @@ void get_valid_moves(int player_id, int character_id, int x, int y, game_tile** 
 						j++;
 					}
 				} else if(dir == 2) { //UP
-					if (tile_is_free(curr[i]->coords.x, curr[i]->coords.y - 1) == TRUE) {
+					if (is_tile_unvisited(curr[i]->coords.x, curr[i]->coords.y - 1) == TRUE) {
 						map[curr[i]->coords.x][curr[i]->coords.y - 1].explored = 1;
 						neighbour[j] = &map[curr[i]->coords.x][curr[i]->coords.y - 1];
 						valid_moves[k] = neighbour[j];
@@ -367,7 +335,7 @@ void get_valid_moves(int player_id, int character_id, int x, int y, game_tile** 
 						j++;
 					}
 				} else { //DOWN
-					if (tile_is_free(curr[i]->coords.x, curr[i]->coords.y + 1) == TRUE) {
+					if (is_tile_unvisited(curr[i]->coords.x, curr[i]->coords.y + 1) == TRUE) {
 						map[curr[i]->coords.x][curr[i]->coords.y + 1].explored = 1;
 						neighbour[j] = &map[curr[i]->coords.x][curr[i]->coords.y + 1];
 						valid_moves[k] = neighbour[j];
@@ -384,14 +352,30 @@ void get_valid_moves(int player_id, int character_id, int x, int y, game_tile** 
 	}
 	free(neighbour);
 	free(curr);
+	return k;
 }
 
-
+// Depth first search on current node 3 levels to get valid moves
+void get_valid_moves(int player_id, int character_id, int x, int y, game_tile** valid_moves) {
+	int i;
+	int j = 1;
+	int len;
+	game_tile **dfs_tree = (game_tile**) calloc(25, sizeof(game_tile*));
+	len = dfs_map(x, y, MAX_SPACES_MOVE, dfs_tree);
+	valid_moves[0] = dfs_tree[0];
+	dfs_tree[0]->explored = 0;
+	for(i = 1; i < len; i++) {
+		dfs_tree[i]->explored = 0;
+		if (dfs_tree[i]->type == GRASS) {
+			valid_moves[j] = dfs_tree[i];
+			j++;
+		}
+	}
+	free(dfs_tree);
+}
 
 int is_valid_move(int x, int y, game_tile** moves) {
-	int total = 0;
 	int i;
-
 	for(i = 0; moves[i] != 0; i++) {
 		if (&map[x][y] == moves[i]) {
 			return 1;
@@ -445,11 +429,28 @@ void move_menu(int player_id, int character_id) {
 		}
 		move = get_player_input(SERIAL);
 	}
-
-	for(i = 0; valid_moves[i] != 0; i++) {
-		valid_moves[i]->explored = 0;
-	}
 	free(valid_moves);
+}
+
+int get_valid_attacks(int player_id, int character_id, game_tile** valid_attacks) {
+	int i;
+	int j = 1;
+	int len;
+	game_tile** dfs_tree = (game_tile**) calloc(25, sizeof(game_tile*));
+	len = dfs_map(Players[player_id]->characters[character_id].pos.x,
+			Players[player_id]->characters[character_id].pos.y,
+			Players[player_id]->characters[character_id].rng, dfs_tree);
+	valid_attacks[0] = dfs_tree[0];
+	dfs_tree[0]->explored = 0;
+	for(i = 1; i < len; i++) {
+		dfs_tree[i]->explored = 0;
+		if ((dfs_tree[i]->occupied_by != NULL) && (dfs_tree[i]->occupied_by->team != player_id)) {
+			valid_attacks[j] = dfs_tree[i];
+			printf("valid atk: %d %d\n", valid_attacks[j]->coords.x, valid_attacks[j]->coords.y);
+			j++;
+		}
+	free(dfs_tree);
+	return j;
 }
 
 /*void move_menu(int player_id, int character_id) {
@@ -520,8 +521,9 @@ int is_valid_attack(int player_id, int character_id, int x, int y) {
 
 void update_healthbar(int player_id, int character_id) {
 	// Black out health lost
-	int pixel_per_hp = HEALTHBAR_LEN / DEFAULT_HP;
-	int damage = DEFAULT_HP - Players[player_id]->characters[character_id].hp;
+	int pixel_per_hp = HEALTHBAR_LEN / classes[Players[player_id]->characters[character_id].class].hp;
+	int damage = classes[Players[player_id]->characters[character_id].class].hp -
+			Players[player_id]->characters[character_id].hp;
 	damage = damage * pixel_per_hp;
 	if(damage == 0) {
 		return;
@@ -557,45 +559,31 @@ void attack_player(int player_id, int character_id, int x, int y) {
 }
 
 void attack_menu(int player_id, int character_id) {
-	int sel_x = Players[player_id]->characters[character_id].pos.x;
-	int sel_y = Players[player_id]->characters[character_id].pos.y;
-	draw_cursor(0, 0, sel_x, sel_y, Players[player_id]->characters[character_id].colour);
+	int i = 0;
+	int old;
+	int atks;
+	game_tile** valid_attacks = (game_tile**) calloc(25, sizeof(game_tile*));
+	draw_cursor(0, 0, valid_attacks[0]->coords.x, valid_attacks[0]->coords.y,
+			Players[player_id]->characters[character_id].colour);
+	atks = get_valid_attacks(player_id, character_id, valid_attacks);
 	keypress move = get_player_input(SERIAL);
 
 	while(1) {
-		if (move == UP) {
-			if(is_valid_attack(player_id, character_id, sel_x, sel_y - 1)) {
-				draw_cursor(sel_x, sel_y, sel_x, sel_y, 0x3579);
-				sel_y--;
-				draw_cursor(sel_x, sel_y + 1, sel_x, sel_y, Players[player_id]->characters[character_id].colour);
-			}
-		} else if (move == DOWN) {
-			if(is_valid_attack(player_id, character_id, sel_x, sel_y + 1)) {
-				draw_cursor(sel_x, sel_y, sel_x, sel_y, 0x3579);
-				sel_y++;
-				draw_cursor(sel_x, sel_y - 1, sel_x, sel_y, Players[player_id]->characters[character_id].colour);
-			}
-		} else if (move == LEFT) {
-			if(is_valid_attack(player_id, character_id, sel_x - 1, sel_y)) {
-				draw_cursor(sel_x, sel_y, sel_x, sel_y, 0x3579);
-				sel_x--;
-				draw_cursor(sel_x + 1, sel_y, sel_x, sel_y, Players[player_id]->characters[character_id].colour);
-			}
-		} else if (move == RIGHT) {
-			if(is_valid_attack(player_id, character_id, sel_x + 1, sel_y)) {
-				draw_cursor(sel_x, sel_y, sel_x, sel_y, 0x3579);
-				sel_x++;
-				draw_cursor(sel_x - 1, sel_y, sel_x, sel_y, Players[player_id]->characters[character_id].colour);
-			}
+		if ((move == RIGHT)) {
+			old = i;
+			i = i + 1 < atks ? ++i : 0;
+			draw_cursor(valid_attacks[old]->coords.x, valid_attacks[old]->coords.y,
+					valid_attacks[i]->coords.x, valid_attacks[i]->coords.y,
+					Players[player_id]->characters[character_id].colour);
+
 		} else if (move == ENTER) {
 			//attack_player();
-			draw_cursor(sel_x, sel_y, sel_x, sel_y, 0x3579);
-			attack_player(player_id, character_id, sel_x, sel_y);
-			update_healthbar(map[sel_x][sel_y].occupied_by->team, map[sel_x][sel_y].occupied_by->id);
-			break;
-		}
-		move = get_player_input(SERIAL);
-	}
+			draw_cursor(valid_attacks[i]->coords.x, valid_attacks[i]->coords.y,
+					valid_attacks[i]->coords.x, valid_attacks[i]->coords.y,
+					Players[player_id]->characters[character_id].colour);
+			attack_player(player_id, character_id, valid_attacks[i]->coords.x, valid_attacks[i]->coords.y);
+			update_healthbar(valid_attacks[i]->occupied_by->team, valid_attacks[i]->occupied_by->id);
+	free(valid_attacks);
 }
 
 void play_game() {
