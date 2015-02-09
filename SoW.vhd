@@ -115,7 +115,7 @@ COMPONENT SoW_system
 				sdcard_b_SD_dat: INOUT STD_LOGIC;
 				sdcard_b_SD_dat3: INOUT STD_LOGIC;
 				sdcard_o_SD_clock: OUT STD_LOGIC;
-				gpio_readdata        : out   std_logic_vector(9 downto 0)  
+				gpio_0_export       : inout   std_logic_vector(9 downto 0)  
         );
 END COMPONENT;
 SIGNAL DQM : STD_LOGIC_VECTOR(1 DOWNTO 0);
@@ -180,6 +180,6 @@ sdcard_b_SD_cmd => SD_CMD,
 sdcard_b_SD_dat => SD_DAT,
 sdcard_b_SD_dat3 => SD_DAT3,
 sdcard_o_SD_clock => SD_CLK ,
-gpio_readdata        => GPIO_0 
+gpio_0_export        => GPIO_0 
 );
 END Structure;
