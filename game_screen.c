@@ -87,7 +87,7 @@ void draw_sprite(int x, int y, sprite type) {
 	IOWR_32DIRECT(DRAWER_BASE, 4, y);
 	IOWR_32DIRECT(DRAWER_BASE, 8, type);
 	IOWR_32DIRECT(DRAWER_BASE, 12, 1); //Start
-	printf("%d, %d\n", IORD_32DIRECT(DRAWER_BASE, 16), IORD_32DIRECT(DRAWER_BASE, 20));
+	//printf("%d, %d\n", IORD_32DIRECT(DRAWER_BASE, 16), IORD_32DIRECT(DRAWER_BASE, 20));
 	while(IORD_32DIRECT(DRAWER_BASE, 24) == 0) {}
 }
 
@@ -635,21 +635,21 @@ void play_game() {
 	int player_id = 0;
 	int i = 0;
 	int j =0;
-	for(j = 0x0; j <= 0x4; j++) {
+	/*for(j = 0x0; j <= 0x4; j++) {
 		IOWR_32DIRECT(DRAWER_BASE, 8, j);
 		for(i = 0; i < 16 * 16; i++) {
 			if(j == 0) IOWR_32DIRECT(DRAWER_BASE, 16, 0x07E0);
 			else if(j == 1) IOWR_32DIRECT(DRAWER_BASE, 16, 0x001F);
 			else IOWR_32DIRECT(DRAWER_BASE, 16, 0x0FF0);
 		}
-	}
+	}*/
 
 	show_game();
 	initialize_players();
 
-	for(j = 0x0; j <= 0x4; j++) {
+	/*for(j = 0x0; j <= 0x4; j++) {
 		draw_sprite(j,j, j);
-	}
+	}*/
 
 
 	 while(1){
