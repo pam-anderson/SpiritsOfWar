@@ -124,7 +124,15 @@
          type = "String";
       }
    }
-   element gpio_com_0.avalon_slave_0
+   element pixel_drawer_0.avalon_slave_0
+   {
+      datum baseAddress
+      {
+         value = "18432";
+         type = "String";
+      }
+   }
+   element gpio_master_0.avalon_slave_0
    {
       datum baseAddress
       {
@@ -132,11 +140,11 @@
          type = "String";
       }
    }
-   element pixel_drawer_0.avalon_slave_0
+   element gpio_com_0.avalon_slave_0
    {
       datum baseAddress
       {
-         value = "17440";
+         value = "17472";
          type = "String";
       }
    }
@@ -177,6 +185,14 @@
       datum _sortIndex
       {
          value = "24";
+         type = "int";
+      }
+   }
+   element gpio_master_0
+   {
+      datum _sortIndex
+      {
+         value = "25";
          type = "int";
       }
    }
@@ -292,19 +308,19 @@
          type = "String";
       }
    }
-   element new_sdram_controller_0.s1
-   {
-      datum baseAddress
-      {
-         value = "16777216";
-         type = "String";
-      }
-   }
    element LEDs.s1
    {
       datum baseAddress
       {
          value = "16464";
+         type = "String";
+      }
+   }
+   element new_sdram_controller_0.s1
+   {
+      datum baseAddress
+      {
+         value = "16777216";
          type = "String";
       }
    }
@@ -379,7 +395,7 @@
  <parameter name="projectName" value="SoW.qpf" />
  <parameter name="sopcBorderPoints" value="false" />
  <parameter name="systemHash" value="1" />
- <parameter name="timeStamp" value="1423370083190" />
+ <parameter name="timeStamp" value="1423428193890" />
  <parameter name="useTestBenchNamingPattern" value="false" />
  <instanceScript></instanceScript>
  <interface name="clk" internal="clk_0.clk_in" type="clock" dir="end" />
@@ -450,9 +466,10 @@
    type="conduit"
    dir="end" />
  <interface name="sdcard" internal="sdcard.conduit_end" type="conduit" dir="end" />
+ <interface name="gpio" internal="gpio_com_0.conduit_end" />
  <interface
-   name="gpio"
-   internal="gpio_com_0.conduit_end"
+   name="gpio_0"
+   internal="gpio_master_0.conduit_end"
    type="conduit"
    dir="end" />
  <module kind="clock_source" version="13.0" enabled="1" name="clk_0">
@@ -566,8 +583,8 @@
   <parameter name="tightlyCoupledInstructionMaster1AddrWidth" value="1" />
   <parameter name="tightlyCoupledInstructionMaster2AddrWidth" value="1" />
   <parameter name="tightlyCoupledInstructionMaster3AddrWidth" value="1" />
-  <parameter name="instSlaveMapParam"><![CDATA[<address-map><slave name='onchip_memory2_0.s1' start='0x0' end='0x1000' /><slave name='nios2_qsys_0.jtag_debug_module' start='0x1800' end='0x2000' /><slave name='pixel_drawer_0.avalon_slave_0' start='0x4420' end='0x4440' /><slave name='new_sdram_controller_0.s1' start='0x1000000' end='0x1800000' /></address-map>]]></parameter>
-  <parameter name="dataSlaveMapParam"><![CDATA[<address-map><slave name='onchip_memory2_0.s1' start='0x0' end='0x1000' /><slave name='nios2_qsys_0.jtag_debug_module' start='0x1800' end='0x2000' /><slave name='char_drawer.avalon_char_buffer_slave' start='0x2000' end='0x4000' /><slave name='timer_0.s1' start='0x4000' end='0x4020' /><slave name='audio_0.avalon_audio_slave' start='0x4020' end='0x4030' /><slave name='audio_and_video_config_0.avalon_av_config_slave' start='0x4030' end='0x4040' /><slave name='pixel_buffer_dma.avalon_control_slave' start='0x4040' end='0x4050' /><slave name='LEDs.s1' start='0x4050' end='0x4060' /><slave name='switches.s1' start='0x4060' end='0x4070' /><slave name='rs232_0.avalon_rs232_slave' start='0x4070' end='0x4078' /><slave name='keyboard.avalon_ps2_slave' start='0x4078' end='0x4080' /><slave name='char_drawer.avalon_char_control_slave' start='0x4080' end='0x4088' /><slave name='jtag_uart_0.avalon_jtag_slave' start='0x4088' end='0x4090' /><slave name='character_lcd_0.avalon_lcd_slave' start='0x4090' end='0x4092' /><slave name='pixel_drawer_0.avalon_slave_0' start='0x4420' end='0x4440' /><slave name='gpio_com_0.avalon_slave_0' start='0x4440' end='0x4450' /><slave name='sdcard.avalon_sdcard_slave' start='0x5000' end='0x5400' /><slave name='pixel_buffer.avalon_sram_slave' start='0x80000' end='0x100000' /><slave name='new_sdram_controller_0.s1' start='0x1000000' end='0x1800000' /></address-map>]]></parameter>
+  <parameter name="instSlaveMapParam"><![CDATA[<address-map><slave name='onchip_memory2_0.s1' start='0x0' end='0x1000' /><slave name='nios2_qsys_0.jtag_debug_module' start='0x1800' end='0x2000' /><slave name='pixel_drawer_0.avalon_slave_0' start='0x4800' end='0x4820' /><slave name='new_sdram_controller_0.s1' start='0x1000000' end='0x1800000' /></address-map>]]></parameter>
+  <parameter name="dataSlaveMapParam"><![CDATA[<address-map><slave name='onchip_memory2_0.s1' start='0x0' end='0x1000' /><slave name='nios2_qsys_0.jtag_debug_module' start='0x1800' end='0x2000' /><slave name='char_drawer.avalon_char_buffer_slave' start='0x2000' end='0x4000' /><slave name='timer_0.s1' start='0x4000' end='0x4020' /><slave name='audio_0.avalon_audio_slave' start='0x4020' end='0x4030' /><slave name='audio_and_video_config_0.avalon_av_config_slave' start='0x4030' end='0x4040' /><slave name='pixel_buffer_dma.avalon_control_slave' start='0x4040' end='0x4050' /><slave name='LEDs.s1' start='0x4050' end='0x4060' /><slave name='switches.s1' start='0x4060' end='0x4070' /><slave name='rs232_0.avalon_rs232_slave' start='0x4070' end='0x4078' /><slave name='keyboard.avalon_ps2_slave' start='0x4078' end='0x4080' /><slave name='char_drawer.avalon_char_control_slave' start='0x4080' end='0x4088' /><slave name='jtag_uart_0.avalon_jtag_slave' start='0x4088' end='0x4090' /><slave name='character_lcd_0.avalon_lcd_slave' start='0x4090' end='0x4092' /><slave name='gpio_master_0.avalon_slave_0' start='0x4440' end='0x4450' /><slave name='pixel_drawer_0.avalon_slave_0' start='0x4800' end='0x4820' /><slave name='sdcard.avalon_sdcard_slave' start='0x5000' end='0x5400' /><slave name='pixel_buffer.avalon_sram_slave' start='0x80000' end='0x100000' /><slave name='new_sdram_controller_0.s1' start='0x1000000' end='0x1800000' /></address-map>]]></parameter>
   <parameter name="clockFrequency" value="50000000" />
   <parameter name="deviceFamilyName" value="Cyclone II" />
   <parameter name="internalIrqMaskSystemInfo" value="992" />
@@ -887,9 +904,10 @@
   <parameter name="pixel_buffer_base" value="524288" />
   <parameter name="AUTO_CLOCK_CLOCK_RATE" value="50000000" />
  </module>
- <module kind="gpio_com" version="1.0" enabled="1" name="gpio_com_0">
+ <module kind="gpio_com" version="1.0" enabled="0" name="gpio_com_0">
   <parameter name="AUTO_CLOCK_CLOCK_RATE" value="50000000" />
  </module>
+ <module kind="gpio_master" version="1.0" enabled="1" name="gpio_master_0" />
  <connection
    kind="avalon"
    version="13.0"
@@ -1506,7 +1524,7 @@
    start="nios2_qsys_0.instruction_master"
    end="pixel_drawer_0.avalon_slave_0">
   <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x4420" />
+  <parameter name="baseAddress" value="0x4800" />
   <parameter name="defaultConnection" value="false" />
  </connection>
  <connection
@@ -1515,7 +1533,7 @@
    start="nios2_qsys_0.data_master"
    end="pixel_drawer_0.avalon_slave_0">
   <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x4420" />
+  <parameter name="baseAddress" value="0x4800" />
   <parameter name="defaultConnection" value="false" />
  </connection>
  <connection
@@ -1551,6 +1569,30 @@
   <parameter name="baseAddress" value="0x4440" />
   <parameter name="defaultConnection" value="false" />
  </connection>
+ <connection
+   kind="reset"
+   version="13.0"
+   start="clk_0.clk_reset"
+   end="gpio_master_0.reset" />
+ <connection
+   kind="avalon"
+   version="13.0"
+   start="nios2_qsys_0.data_master"
+   end="gpio_master_0.avalon_slave_0">
+  <parameter name="arbitrationPriority" value="1" />
+  <parameter name="baseAddress" value="0x4440" />
+  <parameter name="defaultConnection" value="false" />
+ </connection>
+ <connection
+   kind="reset"
+   version="13.0"
+   start="nios2_qsys_0.jtag_debug_module_reset"
+   end="gpio_master_0.reset" />
+ <connection
+   kind="clock"
+   version="13.0"
+   start="up_clocks_0.sys_clk"
+   end="gpio_master_0.clock" />
  <interconnectRequirement for="$system" name="qsys_mm.clockCrossingAdapter" value="HANDSHAKE" />
  <interconnectRequirement for="$system" name="qsys_mm.maxAdditionalLatency" value="1" />
 </system>
