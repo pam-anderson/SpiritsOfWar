@@ -32,7 +32,7 @@
 /* MEMORY LOCATIONS */
 #define SERIAL_DATA_LOC (alt_u8 *) 0x0
 #define SERIAL_PAR_LOC (alt_u8 *) 0x4
-#define DRAWER_BASE (volatile int*) 0x4400
+#define DRAWER_BASE (volatile int*) 0x4800
 #define SERIAL_BASE (volatile int *) 0x4070
 #define KEY_BASE 0x4078
 #define TIMER_BASE 0x4000

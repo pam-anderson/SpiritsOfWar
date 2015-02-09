@@ -52,10 +52,10 @@ void draw_characters() {
 	int i = 0, k = 0;
 	for(i = 0; i < NO_PLAYERS; i++) {
 		for(k = 0; k < CHARS_PER_PLAYER; k++) {
-			if(Players[i]->characters[k].hp > 0) {
-				alt_up_pixel_buffer_dma_draw_box(pixel_buffer, map[Players[i]->characters[k].pos.x][Players[i]->characters[k].pos.y].pos.x, map[Players[i]->characters[k].pos.x][Players[i]->characters[k].pos.y].pos.y,
-						map[Players[i]->characters[k].pos.x][Players[i]->characters[k].pos.y].pos.x + SIZE_OF_TILE - 1, map[Players[i]->characters[k].pos.x][Players[i]->characters[k].pos.y].pos.y + SIZE_OF_TILE - 1,
-							Players[i]->characters[k].colour, 0);
+			if(Players[i].characters[k].hp > 0) {
+				alt_up_pixel_buffer_dma_draw_box(pixel_buffer, map[Players[i].characters[k].pos.x][Players[i].characters[k].pos.y].pos.x, map[Players[i].characters[k].pos.x][Players[i].characters[k].pos.y].pos.y,
+						map[Players[i].characters[k].pos.x][Players[i].characters[k].pos.y].pos.x + SIZE_OF_TILE - 1, map[Players[i].characters[k].pos.x][Players[i].characters[k].pos.y].pos.y + SIZE_OF_TILE - 1,
+							Players[i].characters[k].colour, 0);
 			}
 		}
 	}
@@ -183,26 +183,21 @@ void animate(int colour, int old_x, int old_y, int new_x, int new_y) {
 
 void move_player(int player_id, int char_id, int old_x, int old_y, int new_x, int new_y) {
 	// Erase old position
-	//map[old_x][old_y].type = GRASS;
 	map[old_x][old_y].occupied_by = NULL;
-
-	//alt_up_pixel_buffer_dma_draw_box(pixel_buffer, map[old_x][old_y].pos.x + 1, map[old_x][old_y].pos.y + 1,
-	//		map[old_x][old_y].pos.x + SIZE_OF_TILE - 1, map[old_x][old_y].pos.y + SIZE_OF_TILE - 1, 0x4321, 0);
 
 	if((new_x == -1) || (new_y == -1) || (new_x == DIMENSION_OF_MAP) || (new_y == DIMENSION_OF_MAP)) {
 		return;
 	}
 
-	animate(Players[player_id]->characters[char_id].colour, old_x, old_y, new_x, new_y);
+	animate(Players[player_id].characters[char_id].colour, old_x, old_y, new_x, new_y);
 
-	Players[player_id]->characters[char_id].pos.x = new_x;
-	Players[player_id]->characters[char_id].pos.y = new_y;
+	Players[player_id].characters[char_id].pos.x = new_x;
+	Players[player_id].characters[char_id].pos.y = new_y;
 	// Place player in new selection
-	//map[new_x][new_y].type = CHARACTER;
-	map[new_x][new_y].occupied_by = &Players[player_id]->characters[char_id];
+	map[new_x][new_y].occupied_by = &Players[player_id].characters[char_id];
 	alt_up_pixel_buffer_dma_draw_box(pixel_buffer, map[new_x][new_y].pos.x + 1, map[new_x][new_y].pos.y + 1,
 			map[new_x][new_y].pos.x + SIZE_OF_TILE - 1, map[new_x][new_y].pos.y + SIZE_OF_TILE - 1,
-			Players[player_id]->characters[char_id].colour, 0);
+			Players[player_id].characters[char_id].colour, 0);
 }
 
 void initialize_players() {
@@ -213,60 +208,48 @@ void initialize_players() {
 
 	// The boundaries determine the area where players can position their characters
 	// when starting the game.
-	Players[0]->lower_boundary.x = 0;
-	Players[0]->upper_boundary.x = DIMENSION_OF_MAP/2 - 1;
-	Players[0]->lower_boundary.y = DIMENSION_OF_MAP/2;
-	Players[0]->upper_boundary.y = DIMENSION_OF_MAP - 1;
+	Players[0].lower_boundary.x = 0;
+	Players[0].upper_boundary.x = DIMENSION_OF_MAP/2 - 1;
+	Players[0].lower_boundary.y = DIMENSION_OF_MAP/2;
+	Players[0].upper_boundary.y = DIMENSION_OF_MAP - 1;
 
-	Players[1]->lower_boundary.x = DIMENSION_OF_MAP/2;
-	Players[1]->upper_boundary.x = DIMENSION_OF_MAP - 1;
-	Players[1]->lower_boundary.y = 0;
-	Players[1]->upper_boundary.y = DIMENSION_OF_MAP/2 - 1;
+	Players[1].lower_boundary.x = DIMENSION_OF_MAP/2;
+	Players[1].upper_boundary.x = DIMENSION_OF_MAP - 1;
+	Players[1].lower_boundary.y = 0;
+	Players[1].upper_boundary.y = DIMENSION_OF_MAP/2 - 1;
 
 	for(i = 0; i < NO_PLAYERS; i++) {
-		Players[i]->characters_remaining = CHARS_PER_PLAYER;
+		Players[i].characters_remaining = CHARS_PER_PLAYER;
 		for(j = 0; j < CHARS_PER_PLAYER; j++) {
-			Players[i]->characters[j].hp = classes[j].hp;
-			Players[i]->characters[j].atk = classes[j].atk;
-			Players[i]->characters[j].def = classes[j].def;
-			Players[i]->characters[j].rng = classes[j].rng;
-			Players[i]->characters[j].class = classes[j].class;
-			Players[i]->characters[j].colour = colours[i][j];
-			Players[i]->characters[j].team = i;
-			Players[i]->characters[j].id = j;
-			Players[i]->characters[j].movement = MAX_SPACES_MOVE;
+			Players[i].characters[j].hp = classes[j].hp;
+			Players[i].characters[j].atk = classes[j].atk;
+			Players[i].characters[j].def = classes[j].def;
+			Players[i].characters[j].rng = classes[j].rng;
+			Players[i].characters[j].class = classes[j].class;
+			Players[i].characters[j].colour = colours[i][j];
+			Players[i].characters[j].team = i;
+			Players[i].characters[j].id = j;
+			Players[i].characters[j].movement = MAX_SPACES_MOVE;
 
-			Players[i]->characters[j].pos.x = start_pos[i][j][0];
-			Players[i]->characters[j].pos.y = start_pos[i][j][1];
-			Players[i]->characters[j].move = MOVE;
-			//Players[i]->characters[j].standing = 3 + i * 27 + j * 9;
-			//Players[i]->characters[j].forward1 = 4 + i * 27 + j * 9;
-			//Players[i]->characters[j].forward2 = 5 + i * 27 + j * 9;
-			//Players[i]->characters[j].back1 = 6 + i * 27 + j * 9;
-			//Players[i]->characters[j].back2 = 7 + i * 27 + j * 9;
-			//Players[i]->characters[j].right1 = 8 + i * 27 + j * 9;
-			//Players[i]->characters[j].right2 = 9 + i * 27 + j * 9;
-			//Players[i]->characters[j].left1 = 10 + i * 27 + j * 9;
-			//Players[i]->characters[j].left2 = 11 + i * 27 + j * 9;
+			Players[i].characters[j].pos.x = start_pos[i][j][0];
+			Players[i].characters[j].pos.y = start_pos[i][j][1];
+			Players[i].characters[j].move = MOVE;
 
+			x = Players[i].characters[j].pos.x;
+			y = Players[i].characters[j].pos.y;
 
-
-			x = Players[i]->characters[j].pos.x;
-			y = Players[i]->characters[j].pos.y;
-
-			map[x][y].occupied_by = &Players[i]->characters[j];
+			map[x][y].occupied_by = &Players[i].characters[j];
 			alt_up_pixel_buffer_dma_draw_box(pixel_buffer, map[x][y].pos.x, map[x][y].pos.y,
 					map[x][y].pos.x + SIZE_OF_TILE - 1, map[x][y].pos.y + SIZE_OF_TILE - 1,
-					Players[i]->characters[j].colour, 0);
-			draw_healthbar(healthbar_pos[i][j][0], healthbar_pos[i][j][1], Players[i]->characters[j].colour);
+					Players[i].characters[j].colour, 0);
+			draw_healthbar(healthbar_pos[i][j][0], healthbar_pos[i][j][1], Players[i].characters[j].colour);
 		}
 	}
 }
 
-
-int tile_is_free(int x, int y) {
-	if ((0 <= x) && (x < DIMENSION_OF_MAP ) && (0 <= y) && (y < DIMENSION_OF_MAP) && (map[x][y].occupied_by == NULL) &&
-			(map[x][y].explored == 0)) {
+int is_tile_unvisited(int x, int y) {
+	if ((0 <= x) && (x < DIMENSION_OF_MAP ) && (0 <= y) && (y < DIMENSION_OF_MAP) &&
+			(map[x][y].occupied_by == NULL) && (map[x][y].explored == 0)) {
 		return 1;
 	} else {
 		return 0;
@@ -274,8 +257,8 @@ int tile_is_free(int x, int y) {
 }
 
 int tile_is_attackable(int player_id, int x, int y) {
-	if ((0 <= x) && (x < DIMENSION_OF_MAP) && (0 <= y) && (y < DIMENSION_OF_MAP) && (map[x][y].occupied_by != NULL) &&
-			(map[x][y].explored == 0) && (map[x][y].occupied_by->team != player_id)) {
+	if ((0 <= x) && (x < DIMENSION_OF_MAP) && (0 <= y) && (y < DIMENSION_OF_MAP) &&
+			(map[x][y].occupied_by != NULL) && (map[x][y].occupied_by->team != player_id)) {
 		return 1;
 	} else {
 		return 0;
@@ -344,13 +327,14 @@ int dfs_map(int x, int y, int levels, game_tile** valid_moves) {
 		curr = neighbour;
 		neighbour = tmp;
 	}
+	for(i = 0; i < k; i++) {
+		valid_moves[i]->explored = 0;
+	}
 	free(neighbour);
 	free(curr);
 	return k;
 }
 
-<<<<<<< HEAD
-// Depth first search on current node 3 levels to get valid moves
 void get_valid_moves(int player_id, int character_id, int x, int y, game_tile** valid_moves) {
 	int i;
 	int j = 1;
@@ -358,122 +342,33 @@ void get_valid_moves(int player_id, int character_id, int x, int y, game_tile** 
 	game_tile **dfs_tree = (game_tile**) calloc(25, sizeof(game_tile*));
 	len = dfs_map(x, y, MAX_SPACES_MOVE, dfs_tree);
 	valid_moves[0] = dfs_tree[0];
-	dfs_tree[0]->explored = 0;
 	for(i = 1; i < len; i++) {
-		dfs_tree[i]->explored = 0;
-		if (dfs_tree[i]->type == GRASS) {
+		if ((dfs_tree[i]->type == GRASS) && dfs_tree[i]->occupied_by == (NULL)) {
 			valid_moves[j] = dfs_tree[i];
 			j++;
 		}
 	}
+	printf("\n");
 	free(dfs_tree);
-}
-
-int is_valid_move(int x, int y, game_tile** moves) {
-	int i;
-	for(i = 0; moves[i] != 0; i++) {
-		if (&map[x][y] == moves[i]) {
-			return 1;
-		}
-	}
-	return 0;
 }
 
 void get_valid_attack(int player_id, int character_id, int x, int y, game_tile** valid_attacks) {
-	int level;
-	int i;
-	int j = 0;
-	int k = 1;
-	int dir;
-	game_tile** neighbour;
-	game_tile** curr;
-	game_tile** tmp;
-
-	neighbour = (game_tile**) calloc(25 , sizeof(game_tile*));
-	curr = (game_tile**) calloc(25 , sizeof(game_tile*));
-	curr[0] = &map[x][y];
-	valid_attacks[0] = curr[0];
-
-	// Depth first search on tiles down three levels to get available moves
-	for(level = 0; level < Players[player_id]->characters[character_id].rng; level++) {
-		// Search each queued neighbour
-		j = 0;
-		for(i = 0; curr[i] != 0; i++) {
-			// Check every neighbour of current tile to see if it would be a valid move
-			for(dir = 0; dir < 4; dir++) {
-				if(dir == 0) { // LEFT
-					if (tile_is_attackable(player_id, curr[i]->coords.x - 1, curr[i]->coords.y) == TRUE) {
-						map[curr[i]->coords.x - 1][curr[i]->coords.y].explored = 1;
-						neighbour[j] = &map[curr[i]->coords.x - 1][curr[i]->coords.y];
-						valid_attacks[k] = neighbour[j];
-						k++;
-						j++;
-					}
-				} else if(dir == 1) {// RIGHTS
-					if (tile_is_attackable(player_id, curr[i]->coords.x + 1, curr[i]->coords.y) == TRUE) {
-						map[curr[i]->coords.x + 1][curr[i]->coords.y].explored = 1;
-						neighbour[j] = &map[curr[i]->coords.x + 1][curr[i]->coords.y];
-						valid_attacks[k] = neighbour[j];
-						k++;
-						j++;
-					}
-				} else if(dir == 2) { //UP
-					if (tile_is_attackable(player_id, curr[i]->coords.x, curr[i]->coords.y - 1) == TRUE) {
-						map[curr[i]->coords.x][curr[i]->coords.y - 1].explored = 1;
-						neighbour[j] = &map[curr[i]->coords.x][curr[i]->coords.y - 1];
-						valid_attacks[k] = neighbour[j];
-						k++;
-						j++;
-					}
-				} else { //DOWN
-					if (tile_is_attackable(player_id, curr[i]->coords.x, curr[i]->coords.y + 1) == TRUE) {
-						map[curr[i]->coords.x][curr[i]->coords.y + 1].explored = 1;
-						neighbour[j] = &map[curr[i]->coords.x][curr[i]->coords.y + 1];
-						valid_attacks[k] = neighbour[j];
-						k++;
-						j++;
-					}
-					curr[i] = NULL;
-				}
-			}
-		}
-		move = get_player_input(SERIAL);
-	}
-	free(valid_moves);
-}
-
-int get_valid_attacks(int player_id, int character_id, game_tile** valid_attacks) {
 	int i;
 	int j = 1;
 	int len;
-	game_tile** dfs_tree = (game_tile**) calloc(25, sizeof(game_tile*));
-	len = dfs_map(Players[player_id]->characters[character_id].pos.x,
-			Players[player_id]->characters[character_id].pos.y,
-			Players[player_id]->characters[character_id].rng, dfs_tree);
+	game_tile **dfs_tree = (game_tile**) calloc(25, sizeof(game_tile*));
+	len = dfs_map(x, y, MAX_SPACES_MOVE, dfs_tree);
 	valid_attacks[0] = dfs_tree[0];
-	dfs_tree[0]->explored = 0;
 	for(i = 1; i < len; i++) {
-		dfs_tree[i]->explored = 0;
-		if ((dfs_tree[i]->occupied_by != NULL) && (dfs_tree[i]->occupied_by->team != player_id)) {
+		printf("dfs_tree[%d] %d %d   ",i, dfs_tree[i]->coords.x, dfs_tree[i]->coords.y);
+		if (tile_is_attackable(player_id, valid_attacks[i]->coords.x, valid_attacks[i]->coords.y)) {
 			valid_attacks[j] = dfs_tree[i];
-			printf("valid atk: %d %d\n", valid_attacks[j]->coords.x, valid_attacks[j]->coords.y);
 			j++;
 		}
-	free(dfs_tree);
-	return j;
-}
-
-		tmp = curr;
-		curr = neighbour;
-		neighbour = tmp;
 	}
-	free(neighbour);
-	free(curr);
 }
-
 
 int is_valid_move(int x, int y, game_tile** moves) {
-//	int total = 0;
 	int i;
 
 	for(i = 0; moves[i] != 0; i++) {
@@ -488,14 +383,14 @@ int is_valid_attack(int player_id, int character_id, int x, int y) {
 	if (map[x][y].type != CHARACTER) {
 		// Tile must be occupied by a player to attack
 		return 0;
-	} else if (map[x][y].occupied_by == &Players[player_id]->characters[character_id]) {
+	} else if (map[x][y].occupied_by == &Players[player_id].characters[character_id]) {
 		// It is ok to move cursor back to self.
 		return 1;
 	} else if (map[x][y].occupied_by->team == player_id) {
 		// Cannot attack teammate
 		return 0;
-	} else if ((abs(Players[player_id]->characters[character_id].pos.x - x) +
-			abs(Players[player_id]->characters[character_id].pos.y - y)) > Players[player_id]->characters[character_id].rng ) {
+	} else if ((abs(Players[player_id].characters[character_id].pos.x - x) +
+			abs(Players[player_id].characters[character_id].pos.y - y)) > Players[player_id].characters[character_id].rng ) {
 		// Cannot attack an opponent that's out of range
 		return 0;
 	} else {
@@ -505,9 +400,9 @@ int is_valid_attack(int player_id, int character_id, int x, int y) {
 
 void update_healthbar(int player_id, int character_id) {
 	// Black out health lost
-	int pixel_per_hp = HEALTHBAR_LEN / classes[Players[player_id]->characters[character_id].class].hp;
-	int damage = classes[Players[player_id]->characters[character_id].class].hp -
-			Players[player_id]->characters[character_id].hp;
+	int pixel_per_hp = HEALTHBAR_LEN / classes[Players[player_id].characters[character_id].class].hp;
+	int damage = classes[Players[player_id].characters[character_id].class].hp -
+			Players[player_id].characters[character_id].hp;
 	damage = damage * pixel_per_hp;
 	if(damage == 0) {
 		return;
@@ -521,25 +416,25 @@ void update_healthbar(int player_id, int character_id) {
 
 void character_is_dead(int player_id, int character_id) {
 	// Remove character from map
-	move_player(player_id, character_id, Players[player_id]->characters[character_id].pos.x,
-			Players[player_id]->characters[character_id].pos.y, -1, -1);
-	Players[player_id]->characters_remaining--;
+	move_player(player_id, character_id, Players[player_id].characters[character_id].pos.x,
+			Players[player_id].characters[character_id].pos.y, -1, -1);
+	Players[player_id].characters_remaining--;
 }
 
 void attack_player(int player_id, int character_id, int x, int y) {
-	if((x == Players[player_id]->characters[character_id].pos.x) &&
-			(y == Players[player_id]->characters[character_id].pos.y)) {
+	if((x == Players[player_id].characters[character_id].pos.x) &&
+			(y == Players[player_id].characters[character_id].pos.y)) {
 		// If selecting self, it means player chose not to attack
 		return;
 	}
-	map[x][y].occupied_by->hp -= Players[player_id]->characters[character_id].atk;
+	map[x][y].occupied_by->hp -= Players[player_id].characters[character_id].atk;
 	if(map[x][y].occupied_by->hp <= 0) {
 		// Cannot have negative health
 		map[x][y].occupied_by->hp = 0;
 		character_is_dead(map[x][y].occupied_by->team, map[x][y].occupied_by->id);
 	}
 	printf("Player %d character %d attacked player %d and caused %d damage.\n",
-			player_id, character_id, map[x][y].occupied_by->team, Players[player_id]->characters[character_id].atk);
+			player_id, character_id, map[x][y].occupied_by->team, Players[player_id].characters[character_id].atk);
 	update_healthbar(map[x][y].occupied_by->team, map[x][y].occupied_by->id);
 }
 
@@ -572,9 +467,10 @@ void select_space(game_tile **valid_moves, int *sel_x, int *sel_y) {
 }
 
 void do_movement(int player_id, int character_id) {
+	printf("do movement %d %d\n", player_id, character_id);
 	int i;
-	int old_x = Players[player_id]->characters[character_id].pos.x;
-	int old_y = Players[player_id]->characters[character_id].pos.y;
+	int old_x = Players[player_id].characters[character_id].pos.x;
+	int old_y = Players[player_id].characters[character_id].pos.y;
 	int new_x = old_x;
 	int new_y = old_y;
 	game_tile** valid_moves;
@@ -589,20 +485,18 @@ void do_movement(int player_id, int character_id) {
 
 	for(i = 0; valid_moves[i] != 0; i++) {
 		map[valid_moves[i]->coords.x][valid_moves[i]->coords.y].type &= 0x0FF;
-		valid_moves[i]->explored = 0;
+		//valid_moves[i]->explored = 0;
 	}
 	draw_map();
-	Players[player_id]->characters[character_id].move = ATTACK;
-	//for(i = 0; valid_moves[i] != 0; i++) {
-	//	valid_moves[i]->explored = 0;
-	//}
+	Players[player_id].characters[character_id].move = ATTACK;
 	free(valid_moves);
 }
 
 void do_attack(int player_id, int character_id) {
+	printf("do attack %d %d\n", player_id, character_id);
 	int i = 0;
-	int old_x = Players[player_id]->characters[character_id].pos.x;
-	int old_y = Players[player_id]->characters[character_id].pos.y;
+	int old_x = Players[player_id].characters[character_id].pos.x;
+	int old_y = Players[player_id].characters[character_id].pos.y;
 	int new_x = old_x;
 	int new_y = old_y;
 	game_tile** valid_attacks;
@@ -616,14 +510,15 @@ void do_attack(int player_id, int character_id) {
 	attack_player(player_id, character_id, new_x, new_y);
 	for(i = 0; valid_attacks[i] != 0; i++) {
 		map[valid_attacks[i]->coords.x][valid_attacks[i]->coords.y].type &= 0x0FF;
-		valid_attacks[i]->explored = 0;
+		//valid_attacks[i]->explored = 0;
 	}
 	draw_map();
-	Players[player_id]->characters[character_id].move = DONE;
+	Players[player_id].characters[character_id].move = DONE;
 	free(valid_attacks);
 }
 
 void select_character(int player_id) {
+	printf("select character %d\n", player_id);
 	int sel_x = 0, sel_y = 0;
 	keypress move = get_player_input(SERIAL);
 
@@ -641,14 +536,13 @@ void select_character(int player_id) {
 		}
 		move = get_player_input(SERIAL);
 	}
->>>>>>> 4560
 }
 
 int is_turn_done(int player_id) {
 	int i = 0;
 
 		for(i = 0; i < CHARS_PER_PLAYER; i++) {
-			if(Players[player_id]->characters[i].move != DONE && Players[player_id]->characters[i].hp > 0) {
+			if(Players[player_id].characters[i].move != DONE && Players[player_id].characters[i].hp > 0) {
 				return 1;
 			}
 		}
@@ -659,34 +553,18 @@ int is_turn_done(int player_id) {
 void reset_turn(int player_id) {
 	int i = 0;
 	for(i = 0; i < CHARS_PER_PLAYER; i++) {
-		Players[player_id]->characters[i].move = MOVE;
+		Players[player_id].characters[i].move = MOVE;
 	}
 }
 
 void play_game() {
 	int player_id = 0;
-	int i = 0;
-	int j =0;
-	/*for(j = 0x0; j <= 0x4; j++) {
-		IOWR_32DIRECT(DRAWER_BASE, 8, j);
-		for(i = 0; i < 16 * 16; i++) {
-			if(j == 0) IOWR_32DIRECT(DRAWER_BASE, 16, 0x07E0);
-			else if(j == 1) IOWR_32DIRECT(DRAWER_BASE, 16, 0x001F);
-			else IOWR_32DIRECT(DRAWER_BASE, 16, 0x0FF0);
-		}
-	}*/
 
 	show_game();
 	initialize_players();
-
-	/*for(j = 0x0; j <= 0x4; j++) {
-		draw_sprite(j,j, j);
-	}*/
-
-
-	 while(1){
+	while(1){
 		 while(is_turn_done(player_id)) {
-			 if (Players[player_id]->characters_remaining == 0) {
+			 if (Players[player_id].characters_remaining == 0) {
 				 printf("Game over. Player %d lost!\n", player_id);
 				 return;
 			 } else {
