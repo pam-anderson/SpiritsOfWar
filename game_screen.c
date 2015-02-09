@@ -247,9 +247,15 @@ void initialize_players() {
 	}
 }
 
-int is_tile_unvisited(int x, int y) {
+/*
+ * @param occupied Set to 1 if an occupied tile is ok, 0 if an occupied tile is not ok
+ */
+int is_tile_unvisited(int x, int y, int occupied) {
 	if ((0 <= x) && (x < DIMENSION_OF_MAP ) && (0 <= y) && (y < DIMENSION_OF_MAP) &&
-			(map[x][y].occupied_by == NULL) && (map[x][y].explored == 0)) {
+			!occupied && (map[x][y].occupied_by == NULL) && (map[x][y].explored == 0)) {
+		return 1;
+	}else if ((0 <= x) && (x < DIMENSION_OF_MAP ) && (0 <= y) && (y < DIMENSION_OF_MAP) &&
+			occupied && (map[x][y].explored == 0)) {
 		return 1;
 	} else {
 		return 0;
@@ -265,7 +271,7 @@ int tile_is_attackable(int player_id, int x, int y) {
 	}
 }
 
-int dfs_map(int x, int y, int levels, game_tile** valid_moves) {
+int dfs_map(int x, int y, int levels, int occupied, game_tile** valid_moves) {
 	int i;
 	int j = 0;
 	int k = 1;
@@ -288,7 +294,7 @@ int dfs_map(int x, int y, int levels, game_tile** valid_moves) {
 			// Check every neighbour of current tile to see if it would be a valid move
 			for(dir = 0; dir < 4; dir++) {
 				if(dir == 0) { // LEFT
-					if (is_tile_unvisited(curr[i]->coords.x - 1, curr[i]->coords.y) == TRUE) {
+					if (is_tile_unvisited(curr[i]->coords.x - 1, curr[i]->coords.y, occupied) == TRUE) {
 						map[curr[i]->coords.x - 1][curr[i]->coords.y].explored = 1;
 						neighbour[j] = &map[curr[i]->coords.x - 1][curr[i]->coords.y];
 						valid_moves[k] = neighbour[j];
@@ -296,7 +302,7 @@ int dfs_map(int x, int y, int levels, game_tile** valid_moves) {
 						j++;
 					}
 				} else if(dir == 1) {// RIGHT
-					if (is_tile_unvisited(curr[i]->coords.x + 1, curr[i]->coords.y) == TRUE) {
+					if (is_tile_unvisited(curr[i]->coords.x + 1, curr[i]->coords.y, occupied) == TRUE) {
 						map[curr[i]->coords.x + 1][curr[i]->coords.y].explored = 1;
 						neighbour[j] = &map[curr[i]->coords.x + 1][curr[i]->coords.y];
 						valid_moves[k] = neighbour[j];
@@ -304,7 +310,7 @@ int dfs_map(int x, int y, int levels, game_tile** valid_moves) {
 						j++;
 					}
 				} else if(dir == 2) { //UP
-					if (is_tile_unvisited(curr[i]->coords.x, curr[i]->coords.y - 1) == TRUE) {
+					if (is_tile_unvisited(curr[i]->coords.x, curr[i]->coords.y - 1, occupied) == TRUE) {
 						map[curr[i]->coords.x][curr[i]->coords.y - 1].explored = 1;
 						neighbour[j] = &map[curr[i]->coords.x][curr[i]->coords.y - 1];
 						valid_moves[k] = neighbour[j];
@@ -312,7 +318,7 @@ int dfs_map(int x, int y, int levels, game_tile** valid_moves) {
 						j++;
 					}
 				} else { //DOWN
-					if (is_tile_unvisited(curr[i]->coords.x, curr[i]->coords.y + 1) == TRUE) {
+					if (is_tile_unvisited(curr[i]->coords.x, curr[i]->coords.y + 1, occupied) == TRUE) {
 						map[curr[i]->coords.x][curr[i]->coords.y + 1].explored = 1;
 						neighbour[j] = &map[curr[i]->coords.x][curr[i]->coords.y + 1];
 						valid_moves[k] = neighbour[j];
@@ -340,7 +346,7 @@ void get_valid_moves(int player_id, int character_id, int x, int y, game_tile** 
 	int j = 1;
 	int len;
 	game_tile **dfs_tree = (game_tile**) calloc(25, sizeof(game_tile*));
-	len = dfs_map(x, y, MAX_SPACES_MOVE, dfs_tree);
+	len = dfs_map(x, y, MAX_SPACES_MOVE, 0, dfs_tree);
 	valid_moves[0] = dfs_tree[0];
 	for(i = 1; i < len; i++) {
 		if ((dfs_tree[i]->type == GRASS) && dfs_tree[i]->occupied_by == (NULL)) {
@@ -348,7 +354,6 @@ void get_valid_moves(int player_id, int character_id, int x, int y, game_tile** 
 			j++;
 		}
 	}
-	printf("\n");
 	free(dfs_tree);
 }
 
@@ -357,10 +362,9 @@ void get_valid_attack(int player_id, int character_id, int x, int y, game_tile**
 	int j = 1;
 	int len;
 	game_tile **dfs_tree = (game_tile**) calloc(25, sizeof(game_tile*));
-	len = dfs_map(x, y, MAX_SPACES_MOVE, dfs_tree);
+	len = dfs_map(x, y, MAX_SPACES_MOVE, 1, dfs_tree);
 	valid_attacks[0] = dfs_tree[0];
 	for(i = 1; i < len; i++) {
-		printf("dfs_tree[%d] %d %d   ",i, dfs_tree[i]->coords.x, dfs_tree[i]->coords.y);
 		if (tile_is_attackable(player_id, valid_attacks[i]->coords.x, valid_attacks[i]->coords.y)) {
 			valid_attacks[j] = dfs_tree[i];
 			j++;
