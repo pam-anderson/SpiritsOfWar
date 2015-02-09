@@ -362,10 +362,10 @@ void get_valid_attack(int player_id, int character_id, int x, int y, game_tile**
 	int j = 1;
 	int len;
 	game_tile **dfs_tree = (game_tile**) calloc(25, sizeof(game_tile*));
-	len = dfs_map(x, y, MAX_SPACES_MOVE, 1, dfs_tree);
+	len = dfs_map(x, y, Players[player_id].characters[character_id].rng, 1, dfs_tree);
 	valid_attacks[0] = dfs_tree[0];
 	for(i = 1; i < len; i++) {
-		if (tile_is_attackable(player_id, valid_attacks[i]->coords.x, valid_attacks[i]->coords.y)) {
+		if (tile_is_attackable(player_id, dfs_tree[i]->coords.x, dfs_tree[i]->coords.y)) {
 			valid_attacks[j] = dfs_tree[i];
 			j++;
 		}
@@ -381,25 +381,6 @@ int is_valid_move(int x, int y, game_tile** moves) {
 		}
 	}
 	return 0;
-}
-
-int is_valid_attack(int player_id, int character_id, int x, int y) {
-	if (map[x][y].type != CHARACTER) {
-		// Tile must be occupied by a player to attack
-		return 0;
-	} else if (map[x][y].occupied_by == &Players[player_id].characters[character_id]) {
-		// It is ok to move cursor back to self.
-		return 1;
-	} else if (map[x][y].occupied_by->team == player_id) {
-		// Cannot attack teammate
-		return 0;
-	} else if ((abs(Players[player_id].characters[character_id].pos.x - x) +
-			abs(Players[player_id].characters[character_id].pos.y - y)) > Players[player_id].characters[character_id].rng ) {
-		// Cannot attack an opponent that's out of range
-		return 0;
-	} else {
-		return 1;
-	}
 }
 
 void update_healthbar(int player_id, int character_id) {
