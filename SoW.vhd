@@ -56,8 +56,8 @@ AUD_DACLRCK	:	IN		STD_LOGIC;
 UART_RXD :		IN 	STD_LOGIC;
 UART_TXD :		OUT	STD_LOGIC;
 SD_DAT, SD_DAT3, SD_CMD: INOUT STD_LOGIC;
-SD_CLK: OUT STD_LOGIC
-
+SD_CLK: OUT STD_LOGIC;
+GPIO_0 : INOUT STD_LOGIC_VECTOR(9 downto 0)
 );
 END SoW;
 ARCHITECTURE Structure OF SoW IS
@@ -114,7 +114,8 @@ COMPONENT SoW_system
 				sdcard_b_SD_cmd: INOUT STD_LOGIC;
 				sdcard_b_SD_dat: INOUT STD_LOGIC;
 				sdcard_b_SD_dat3: INOUT STD_LOGIC;
-				sdcard_o_SD_clock: OUT STD_LOGIC
+				sdcard_o_SD_clock: OUT STD_LOGIC;
+				gpio_0_export       : inout   std_logic_vector(9 downto 0)  
         );
 END COMPONENT;
 SIGNAL DQM : STD_LOGIC_VECTOR(1 DOWNTO 0);
@@ -178,6 +179,7 @@ serial_TXD           => UART_TXD,
 sdcard_b_SD_cmd => SD_CMD,
 sdcard_b_SD_dat => SD_DAT,
 sdcard_b_SD_dat3 => SD_DAT3,
-sdcard_o_SD_clock => SD_CLK 
+sdcard_o_SD_clock => SD_CLK ,
+gpio_0_export        => GPIO_0 
 );
 END Structure;

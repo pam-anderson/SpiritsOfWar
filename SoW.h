@@ -32,58 +32,12 @@
 /* MEMORY LOCATIONS */
 #define SERIAL_DATA_LOC (alt_u8 *) 0x0
 #define SERIAL_PAR_LOC (alt_u8 *) 0x4
-#define DRAWER_BASE (volatile int*) 0x4420
-#define SERIAL_BASE (volatile int *) 0x4470
+#define DRAWER_BASE (volatile int*) 0x4800
+#define SERIAL_BASE (volatile int *) 0x4070
 #define KEY_BASE 0x4078
 #define TIMER_BASE 0x4000
 
-/* MAP DEFINITIONS */
-#define SIZE_OF_TILE 	16
-#define SIZE_OF_MAP 	128
-#define DIMENSION_OF_MAP 8
-#define MAP_CORNER_X 	96
-#define MAP_CORNER_Y 	56
-#define CHARS_PER_PLAYER 3
-#define NO_PLAYERS 		 2
-
 char *KeyInput;
-
-typedef struct {
-int x;
-int y;
-} position;
-
-typedef enum {
-GRASS,
-WATER,
-CHARACTER
-} sprite;
-
-typedef struct {
-position pos;
-int hp;
-int atk;
-int def;
-int rng;
-int colour;
-int team;
-int id;
-} character;
-
-typedef struct {
-position coords;
-position pos;
-sprite type;
-character* occupied_by;
-int explored; // Used in DFS
-} game_tile;
-
-typedef struct {
-character characters[CHARS_PER_PLAYER];
-position upper_boundary; // Territory in which can position players
-position lower_boundary;
-int characters_remaining;
-} player[2];
 
 /* Functions defined by startup code */
 void keyboard_init(void);
@@ -103,6 +57,7 @@ void show_menu(void);
 void show_game(void);
 void animate(int, int, int, int, int);
 void animate_to_tile(int, int, int, int, int, int, int);
+void get_path(int, int, int*);
 void init_timer(void);
 
 void sdcard_init() ;

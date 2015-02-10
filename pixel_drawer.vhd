@@ -9,7 +9,7 @@ generic(
 port (
     clk: in std_logic;
     reset_n: in std_logic;
-    slave_addr: in std_logic_vector(2 downto 0);
+    slave_addr: in std_logic_vector(7 downto 0);
     slave_rd_en: in std_logic;
     slave_wr_en: in std_logic;
     slave_readdata: out std_logic_vector(31 downto 0);
@@ -27,7 +27,7 @@ architecture rtl of pixel_drawer is
     signal x1,x2 : std_logic_vector(8 downto 0);
     signal y1,y2 : std_logic_vector(7 downto 0);
     signal colour : std_logic_vector(15 downto 0);
-	 signal tile_type : std_logic_vector(4 downto 0);
+	 signal tile_type : std_logic_vector(9 downto 0);
     signal done : std_logic := '0';
 	 type tile is array(255 downto 0) of std_logic_vector(15 downto 0);
 	 
@@ -60,7 +60,7 @@ begin
     -- This is used to remember the left-most x point as we draw the box.
     variable savedx : std_logic_vector(8 downto 0);
 	 variable savedy : std_logic_vector(7 downto 0);
-	 
+	 	 
 	 variable grass: tile := (x"1d20", x"1ce0", x"1d00", x"1d00", x"1cc0", x"1d00", x"1d00", x"1cc0", x"1ca0", x"1cc0", x"1ce0", x"1d00", x"1ce0", x"1d00", x"1c60", x"1d00", 
 										x"1c80", x"14c0", x"1d00", x"1ce0", x"1cc0", x"1cc0", x"1ce0", x"1ce0", x"14e0", x"14c0", x"1d00", x"1cc0", x"1ca0", x"1cc0", x"1ca0", x"1c80", 
 										x"1cc0", x"1ce0", x"1d00", x"1ce0", x"1cc0", x"1cc0", x"1ce0", x"1ce0", x"1ce0", x"1cc0", x"1ce0", x"1cc0", x"1ca0", x"1cc0", x"1cc0", x"1ca0", 
@@ -94,6 +94,7 @@ begin
 									 x"0394", x"03d5", x"03d6", x"03d5", x"03b5", x"0394", x"0394", x"03b5", x"03b5", x"0394", x"0374", x"0394", x"03b5", x"03d5", x"03b5", x"03b5", 
 									 x"03b5", x"03d6", x"03d5", x"03b5", x"03b4", x"0394", x"0394", x"03b4", x"03b5", x"03b4", x"0394", x"03b5", x"03d5", x"03b5", x"0394", x"0394", 
 									 x"03f6", x"03b5", x"0394", x"0373", x"0373", x"0394", x"03b5", x"03b5", x"03b5", x"03b4", x"03b4", x"03b5", x"03d5", x"03b5", x"03b4", x"0394");
+									 
 	 
     begin
        if (reset_n = '0') then
@@ -116,36 +117,44 @@ begin
                -- is because each pixel takes 16 bits in memory.  The data of the
                -- write operation is the colour value (16 bits).
 
-               if state = 0 then	
-                 --master_addr <= std_logic_vector(unsigned(pixels) + (unsigned(count) & "00" ));
-					  --master_rd_en <= '1';
-					  --master_wr_en <= '0';
-					  --master_be <= "11";
-					  --colour_local := master_readdata(15 downto 0);
-					  --master_be <= "11";
-					  --state := 2;
-					  
-					--elsif state = 2 and master_waitrequest = '0' then
-					--	master_rd_en <= '0';
-					--	state := 3;
-					  
-					  
-					 --elsif state = 3 then 
+               if state = 0 then						  
 					  master_addr <= std_logic_vector(unsigned(pixel_buffer_base) + unsigned( y1_local & x1_local & '0'));
-					  case tile_type is
-							when "00000" =>	colour_local := std_logic_vector(grass(count));
-							when "00001" =>	colour_local := std_logic_vector(water(count));
-							when "01000" =>	colour_local := (std_logic_vector(grass(count)) OR x"001F");
-							when "10000" =>	colour_local := (std_logic_vector(grass(count)) OR x"F800");
-							when "01001" =>	colour_local := (std_logic_vector(water(count)) OR x"001F");
-							when "10001" =>	colour_local := (std_logic_vector(water(count)) OR x"F800");
-							when others =>		colour_local := std_logic_vector(grass(count));
+					  case tile_type(7 downto 0) is
+							when x"00" =>	colour_local := std_logic_vector(grass(count));
+							when x"01" =>	colour_local := std_logic_vector(water(count));
+							when others =>	colour_local := std_logic_vector(grass(count));
 						end case;
-                  master_writedata <= colour_local;
-                  master_be <= "11";  -- byte enable
-                  master_wr_en <= '1';
-                  master_rd_en <= '0';
-                  state := 1; -- on the next rising clock edge, do state 1 operations
+						
+						case tile_type(9 downto 8) is
+							when "01" => colour_local := colour_local OR x"001F";
+							when "10" => colour_local:= colour_local OR x"F800";
+							when others => null;
+						end case;
+						
+						if(colour_local = x"F81F") then
+							master_wr_en  <= '0';
+							state := 0;
+							if (x1_local = x2_local) then
+								if (y1_local = y2_local) then 
+									done <= '1';   -- box is done
+									processing := '0';
+									count := 0;
+								else
+									x1_local := savedx;
+									y1_local := std_logic_vector(unsigned(y1_local)+1);
+									count := count + 1;
+								end if;
+							else 
+                        x1_local := std_logic_vector(unsigned(x1_local)+1);
+								count := count + 1;
+							end if;
+						else
+							master_writedata <= colour_local;
+							master_be <= "11";  -- byte enable
+							master_wr_en <= '1';
+							master_rd_en <= '0';
+							state := 1; -- on the next rising clock edge, do state 1 operations
+						end if;
 
                -- After starting a write operation, we need to wait until
                -- master_waitrequest is 0.  If it is 1, stay in state 1.
@@ -175,17 +184,20 @@ begin
              -- written value into one of our internal registers.
 	
              if (slave_wr_en = '1') then
+					if(count >= 256) then
+						count := 0;
+						end if;
                 case slave_addr is
 
                     -- These four should be self-explantory
-                    when "000" => x1 <= slave_writedata(8 downto 0);
+                    when x"00" => x1 <= slave_writedata(8 downto 0);
 											x2 <= std_logic_vector(unsigned(slave_writedata(8 downto 0)) + 15);
-                    when "001" => y1 <= slave_writedata(7 downto 0);
+                    when x"01" => y1 <= slave_writedata(7 downto 0);
 											y2 <= std_logic_vector(unsigned(slave_writedata(7 downto 0)) + 15);
-                    when "010" => tile_type <= slave_writedata(4 downto 0);
+                    when x"02" => tile_type <= slave_writedata(9 downto 0);
 
                     -- If the user tries to write to offset 3, we are to start drawing
-                    when "011" =>
+                    when x"03" =>
                        if processing = '0' then
                           processing := '1';  -- start drawing on next rising clk edge
                           state := 0;
@@ -220,7 +232,6 @@ begin
 
                           colour_local := x"FFFF";
                         end if;
-		
                    when others => null;
                 end case;
             end if;
@@ -232,18 +243,18 @@ begin
    -- slave interface (this is because the C program does a memory read).  Depending
    -- on the address read, we return x1, x2, y1, y2, the colour, or the done flag.
 
-   process (slave_rd_en, slave_addr, x1,x2,y1,y2,colour,done)
+   process (slave_rd_en, slave_addr, x1,x2,y1,y2,colour,tile_type,done)
    begin	       
       slave_readdata <= (others => '-');
       if (slave_rd_en = '1') then
           case slave_addr is
-              when "000" => slave_readdata <= "00000000000000000000000" & x1;
-              when "001" => slave_readdata <= "000000000000000000000000" & y1;
-              when "010" => slave_readdata <= "00000000000000000000000" & x2;
-              when "011" => slave_readdata <= "000000000000000000000000" & y2;
-              when "100" => slave_readdata <= "0000000000000000" & colour;
-				  when "101" => slave_readdata <= "000000000000000000000000000" & tile_type;
-              when "110" => slave_readdata <= (0=>done, others=>'0');
+              when "00000000" => slave_readdata <= "00000000000000000000000" & x1;
+              when "00000001" => slave_readdata <= "000000000000000000000000" & y1;
+              when "00000010" => slave_readdata <= "00000000000000000000000" & x2;
+              when "00000011" => slave_readdata <= "000000000000000000000000" & y2;
+              when "00000100" => slave_readdata <= "0000000000000000" & colour;
+				  when "00000101" => slave_readdata <= "0000000000000000000000" & tile_type;
+              when "00000110" => slave_readdata <= (0=>done, others=>'0');
               when others => null;
             end case;
          end if;
