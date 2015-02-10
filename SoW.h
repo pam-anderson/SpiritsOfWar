@@ -37,6 +37,19 @@
 #define KEY_BASE 0x4078
 #define TIMER_BASE 0x4000
 
+/* Music Event Trigger Struct Move Later? */
+struct Event {
+	char * Filename;
+	int initialized;
+	int size;
+	unsigned int *MusicData;
+	unsigned int MusicDataCount;
+	int MusicDataIndex;
+};
+
+#define NumEvents 3
+struct Event Events[NumEvents];
+
 char *KeyInput;
 
 /* Functions defined by startup code */
