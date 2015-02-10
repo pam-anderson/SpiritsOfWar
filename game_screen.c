@@ -283,7 +283,7 @@ int tile_is_attackable(int player_id, int x, int y) {
 }
 
 // Depth first search on current node 3 levels to get valid moves
-void dfs_map(int player_id, int character_id, int x, int y, game_tile** valid_moves, int (*f)(int, int, int)) {
+void dfs_map(int player_id, int character_id, int x, int y, int levels,game_tile** valid_moves, int (*f)(int, int, int)) {
 	int level;
 	int i;
 	int j = 0;
@@ -300,7 +300,7 @@ void dfs_map(int player_id, int character_id, int x, int y, game_tile** valid_mo
 	map[x][y].distance = 0;
 
 	// Depth first search on tiles down three levels to get available moves
-	for(level = 0; level < Players[player_id]->characters[character_id].movement; level++) {
+	for(level = 0; level < levels; level++) {
 		// Search each queued neighbour
 		j = 0;
 		for(i = 0; curr[i] != 0; i++) {
@@ -459,7 +459,7 @@ void do_movement(int player_id, int character_id) {
 	int new_y = old_y;
 	game_tile** valid_moves;
 	valid_moves = (game_tile**) calloc(75, sizeof(game_tile*));
-	dfs_map(player_id, character_id, old_x, old_y, valid_moves, &tile_is_free);
+	dfs_map(player_id, character_id, old_x, old_y, Players[player_id]->characters[character_id].movement,valid_moves, &tile_is_free);
 	for(i = 0; valid_moves[i] != 0; i++) {
 		map[valid_moves[i]->coords.x][valid_moves[i]->coords.y].type |= 0x100;
 	}
@@ -485,7 +485,7 @@ void do_attack(int player_id, int character_id) {
 	int new_y = old_y;
 	game_tile** valid_attacks;
 	valid_attacks = (game_tile**) calloc(75, sizeof(game_tile*));
-	dfs_map(player_id, character_id, old_x, old_y, valid_attacks, &tile_is_attackable);
+	dfs_map(player_id, character_id, old_x, old_y, Players[player_id]->characters[character_id].rng,valid_attacks, &tile_is_attackable);
 	for(i = 0; valid_attacks[i] != 0; i++) {
 		map[valid_attacks[i]->coords.x][valid_attacks[i]->coords.y].type |= 0x200;
 	}
