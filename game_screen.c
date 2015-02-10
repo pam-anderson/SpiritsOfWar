@@ -92,6 +92,24 @@ void draw_cursor(int old_x, int old_y, int new_x, int new_y, int colour) {
 			map[new_x][new_y].pos.x + SIZE_OF_TILE - 1, map[new_x][new_y].pos.y + SIZE_OF_TILE - 1, colour, 0);
 }
 
+int draw_exit_screen(int player_id) {
+	// Use player id for input
+	keypress key;
+	alt_up_char_buffer_clear(char_buffer);
+	alt_up_char_buffer_string(char_buffer, "Are you sure you want to quit?", 25, 23);
+	alt_up_char_buffer_string(char_buffer, "[A] - Yes     [D] - No", 30, 25);
+	while(1) {
+		key = get_player_input(SERIAL);
+		if (key == LEFT) {
+			alt_up_char_buffer_clear(char_buffer);
+			return 0;
+		} else if (key == RIGHT) {
+			alt_up_char_buffer_clear(char_buffer);
+			return 1;
+		}
+	}
+}
+
 /*
  * @brief Draw map to screen.
  */
@@ -421,13 +439,15 @@ void move_cursor(keypress move, int *sel_x, int *sel_y) {
 	}
 }
 
-void select_space(game_tile **valid_moves, int *sel_x, int *sel_y) {
+int select_space(game_tile **valid_moves, int *sel_x, int *sel_y) {
 	keypress move = get_player_input(SERIAL);
 	draw_cursor(*sel_x, *sel_y, *sel_x, *sel_y, 0xF81F);
 	while(1) {
 		move_cursor(move, sel_x, sel_y);
-		if(move == ENTER && is_valid_move(*sel_x, *sel_y, valid_moves)) {
-			return;
+		if (move == ENTER && is_valid_move(*sel_x, *sel_y, valid_moves)) {
+			return 1;
+		} else if (move == ESC) {
+			return 0;
 		}
 		move = get_player_input(SERIAL);
 	}
@@ -446,8 +466,10 @@ void do_movement(int player_id, int character_id) {
 		map[valid_moves[i]->coords.x][valid_moves[i]->coords.y].type |= 0x100;
 	}
 	draw_map();
-	select_space(valid_moves, &new_x, &new_y);
-	move_player(player_id, character_id, old_x, old_y, new_x, new_y);
+	if (select_space(valid_moves, &new_x, &new_y)) {
+		move_player(player_id, character_id, old_x, old_y, new_x, new_y);
+		Players[player_id]->characters[character_id].move = ATTACK;
+	}
 
 	for(i = 0; valid_moves[i] != 0; i++) {
 		map[valid_moves[i]->coords.x][valid_moves[i]->coords.y].type &= 0x0FF;
@@ -455,7 +477,6 @@ void do_movement(int player_id, int character_id) {
 		valid_moves[i]->distance = 10000;
 	}
 	draw_map();
-	Players[player_id]->characters[character_id].move = ATTACK;
 	free(valid_moves);
 }
 
@@ -472,19 +493,20 @@ void do_attack(int player_id, int character_id) {
 		map[valid_attacks[i]->coords.x][valid_attacks[i]->coords.y].type |= 0x200;
 	}
 	draw_map();
-	select_space(valid_attacks, &new_x, &new_y);
-	attack_player(player_id, character_id, new_x, new_y);
+	if (select_space(valid_attacks, &new_x, &new_y)) {
+		attack_player(player_id, character_id, new_x, new_y);
+		Players[player_id]->characters[character_id].move = DONE;
+	}
 	for(i = 0; valid_attacks[i] != 0; i++) {
 		map[valid_attacks[i]->coords.x][valid_attacks[i]->coords.y].type &= 0x0FF;
 		valid_attacks[i]->explored = 0;
 		valid_attacks[i]->distance = 10000;
 	}
 	draw_map();
-	Players[player_id]->characters[character_id].move = DONE;
 	free(valid_attacks);
 }
 
-void select_character(int player_id) {
+int select_character(int player_id) {
 	int sel_x = 0, sel_y = 0;
 	keypress move = get_player_input(SERIAL);
 
@@ -493,11 +515,15 @@ void select_character(int player_id) {
 		if(move == ENTER && map[sel_x][sel_y].occupied_by != NULL) {
 			if(map[sel_x][sel_y].occupied_by->team == player_id && map[sel_x][sel_y].occupied_by->move == MOVE) {
 				do_movement(player_id, map[sel_x][sel_y].occupied_by->id);
-				return;
+				return 1;
 			}
 			else if(map[sel_x][sel_y].occupied_by->move == ATTACK) {
 				do_attack(player_id, map[sel_x][sel_y].occupied_by->id);
-				return;
+				return 1;
+			}
+		} else if(move == ESC) {
+			if (!draw_exit_screen(player_id)) {
+				return 0;
 			}
 		}
 		move = get_player_input(SERIAL);
@@ -537,7 +563,9 @@ void play_game() {
 				 printf("Game over. Player %d lost!\n", player_id);
 				 return;
 			 } else {
-				 select_character(player_id);
+				 if (!select_character(player_id)) {
+					 return;
+				 }
 			 }
 		 }
 		 reset_turn(player_id);
