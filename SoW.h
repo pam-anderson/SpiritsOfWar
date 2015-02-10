@@ -41,7 +41,7 @@ char *KeyInput;
 
 /* Functions defined by startup code */
 void keyboard_init(void);
-char* keyboard_read(void);
+void keyboard_read(void);
 void keyboard_enable_ISR(void);
 
 void audio_init(void);
@@ -57,6 +57,7 @@ void show_menu(void);
 void show_game(void);
 void animate(int, int, int, int, int);
 void animate_to_tile(int, int, int, int, int, int, int);
+void get_path(int, int, int*);
 void init_timer(void);
 
 void sdcard_init() ;

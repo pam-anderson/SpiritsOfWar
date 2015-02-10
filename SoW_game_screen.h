@@ -10,16 +10,19 @@
 #define WARRIOR_ATTACK	5
 #define WARRIOR_DEFENSE	6
 #define WARRIOR_RANGE   1
+#define WARRIOR_MOVEMENT 2
 
 #define RANGER_HP 		12
 #define RANGER_ATTACK	4
 #define RANGER_DEFENSE	4
 #define RANGER_RANGE    2
+#define RANGER_MOVEMENT 5
 
 #define MAGE_HP 		10
 #define MAGE_ATTACK	    4
 #define MAGE_DEFENSE	2
 #define MAGE_RANGE      3
+#define MAGE_MOVEMENT	3
 
 /* MAP DEFINITIONS */
 #define SIZE_OF_TILE 	16
@@ -38,7 +41,8 @@ CHARACTER
 
 typedef enum {
     MOVE,
-    ATTACK
+    ATTACK,
+    DONE
 } character_option;
 
 typedef enum {
@@ -62,6 +66,7 @@ typedef struct {
 	int atk;
 	int def;
 	int rng;
+	int movement;
 }class_defaults;
 
 typedef struct {
@@ -79,6 +84,8 @@ int rng;
 int colour;
 int team; // Player ID
 int id;   // Character ID
+int movement;
+character_option move;
 } character;
 
 typedef struct {
@@ -87,6 +94,7 @@ position pos;
 sprite type;
 character* occupied_by;
 int explored; // Used in DFS
+int distance; //Needed for Path Finding
 } game_tile;
 
 typedef struct {
