@@ -1,13 +1,15 @@
 #include "SoW.h"
 #include "Sow_game_screen.h"
 
-game_tile map[DIMENSION_OF_MAP][DIMENSION_OF_MAP];
+game_tile map[DIMENSION_OF_MAP_X][DIMENSION_OF_MAP_Y];
 player Players[NO_PLAYERS];
 int colours[NO_PLAYERS][CHARS_PER_PLAYER] = {{0xF808, 0x7E0, 0x1F,},{ 0xE700, 0xE70, 0xE7 }};
 /* Start grids of characters */
-int start_pos[NO_PLAYERS][CHARS_PER_PLAYER][2] = {{{0, 6}, {0, 7}, {1, 7}}, {{6, 0}, {7, 0}, {7, 1}}};
+int start_pos[NO_PLAYERS][CHARS_PER_PLAYER][2] = {{{0, DIMENSION_OF_MAP_Y - 2}, {0, DIMENSION_OF_MAP_Y - 1},
+		{1, DIMENSION_OF_MAP_Y - 1}}, {{DIMENSION_OF_MAP_X - 2, 0}, {DIMENSION_OF_MAP_X - 1, 0},
+		{DIMENSION_OF_MAP_X - 1, 1}}};
 /* Coordinates of top left corner of health bar */
-int healthbar_pos[NO_PLAYERS][CHARS_PER_PLAYER][2] = {{{29, 20}, {123, 20}, {217, 20}}, {{29, 204}, {123, 204}, {217, 204}}};
+int healthbar_pos[NO_PLAYERS][CHARS_PER_PLAYER][2] = {{{29, 15}, {123, 15}, {217, 15}}, {{29, 214}, {123, 214}, {217, 214}}};
 class_defaults classes[NUM_OF_CLASSES] = {
 		{WARRIOR, WARRIOR_HP, WARRIOR_ATTACK, WARRIOR_DEFENSE, WARRIOR_RANGE, WARRIOR_MOVEMENT},
 		{RANGER, RANGER_HP, RANGER_ATTACK, RANGER_DEFENSE, RANGER_RANGE, RANGER_MOVEMENT},
@@ -74,8 +76,8 @@ void draw_sprite(int x, int y, sprite type) {
 
 void draw_map() {
 	int x = 0, y = 0;
-	for(y = 0; y < DIMENSION_OF_MAP; y++) {
-		for(x = 0; x < DIMENSION_OF_MAP; x++) {
+	for(y = 0; y < DIMENSION_OF_MAP_Y; y++) {
+		for(x = 0; x < DIMENSION_OF_MAP_X; x++) {
 			draw_sprite(map[x][y].pos.x, map[x][y].pos.y, map[x][y].type);
 		}
 	}
@@ -97,15 +99,15 @@ void show_game(void) {
 	int x;
 	int y;
 	int x_coord = MAP_CORNER_X;
-	int y_coord;
+	int y_coord = MAP_CORNER_Y;
 
 	// Initialize screen. Clear everything.
 	alt_up_pixel_buffer_dma_clear_screen(pixel_buffer, 0);
 	alt_up_char_buffer_clear(char_buffer);
 
-	for(x = 0; x < DIMENSION_OF_MAP; x++, x_coord += SIZE_OF_TILE) {
+	for(x = 0; x < DIMENSION_OF_MAP_X; x++, x_coord += SIZE_OF_TILE) {
 		y_coord = MAP_CORNER_Y;
-		for(y = 0; y < DIMENSION_OF_MAP; y++, y_coord += SIZE_OF_TILE) {
+		for(y = 0; y < DIMENSION_OF_MAP_Y; y++, y_coord += SIZE_OF_TILE) {
 			map[x][y].pos.x = x_coord;
 			map[x][y].pos.y = y_coord;
 			map[x][y].coords.x = x;
@@ -178,7 +180,7 @@ void get_path(int new_x, int new_y, int *path) {
 			new_x--;
 			path[i] = 0;
 		}
-		else if(new_x < DIMENSION_OF_MAP - 1 && map[new_x][new_y].distance > map[new_x + 1][new_y].distance) {
+		else if(new_x < DIMENSION_OF_MAP_X - 1 && map[new_x][new_y].distance > map[new_x + 1][new_y].distance) {
 			new_x++;
 			path[i] = 1;
 		}
@@ -186,7 +188,7 @@ void get_path(int new_x, int new_y, int *path) {
 			new_y--;
 			path[i] = 2;
 		}
-		else if(new_y < DIMENSION_OF_MAP - 1 && map[new_x][new_y].distance > map[new_x][new_y + 1].distance) {
+		else if(new_y < DIMENSION_OF_MAP_Y - 1 && map[new_x][new_y].distance > map[new_x][new_y + 1].distance) {
 			new_y++;
 			path[i] = 3;
 		}
@@ -196,7 +198,7 @@ void get_path(int new_x, int new_y, int *path) {
 
 void move_player(int player_id, int char_id, int old_x, int old_y, int new_x, int new_y) {
 	map[old_x][old_y].occupied_by = NULL;
-	if((new_x == -1) || (new_y == -1) || (new_x == DIMENSION_OF_MAP) || (new_y == DIMENSION_OF_MAP)) {
+	if((new_x == -1) || (new_y == -1) || (new_x == DIMENSION_OF_MAP_X) || (new_y == DIMENSION_OF_MAP_Y)) {
 		return;
 	}
 	animate(Players[player_id]->characters[char_id].colour, old_x, old_y, new_x, new_y);
@@ -213,18 +215,6 @@ void initialize_players() {
 	int j;
 	int x;
 	int y;
-
-	// The boundaries determine the area where players can position their characters
-	// when starting the game.
-	Players[0]->lower_boundary.x = 0;
-	Players[0]->upper_boundary.x = DIMENSION_OF_MAP/2 - 1;
-	Players[0]->lower_boundary.y = DIMENSION_OF_MAP/2;
-	Players[0]->upper_boundary.y = DIMENSION_OF_MAP - 1;
-
-	Players[1]->lower_boundary.x = DIMENSION_OF_MAP/2;
-	Players[1]->upper_boundary.x = DIMENSION_OF_MAP - 1;
-	Players[1]->lower_boundary.y = 0;
-	Players[1]->upper_boundary.y = DIMENSION_OF_MAP/2 - 1;
 
 	for(i = 0; i < NO_PLAYERS; i++) {
 		Players[i]->characters_remaining = CHARS_PER_PLAYER;
@@ -257,7 +247,7 @@ void initialize_players() {
 
 
 int tile_is_free(int player_id, int x, int y) {
-	if ((0 <= x) && (x < DIMENSION_OF_MAP ) && (0 <= y) && (y < DIMENSION_OF_MAP) && (map[x][y].occupied_by == NULL) &&
+	if ((0 <= x) && (x < DIMENSION_OF_MAP_X ) && (0 <= y) && (y < DIMENSION_OF_MAP_Y) && (map[x][y].occupied_by == NULL) &&
 			(map[x][y].explored == 0)) {
 		return 1;
 	} else {
@@ -266,7 +256,7 @@ int tile_is_free(int player_id, int x, int y) {
 }
 
 int tile_is_attackable(int player_id, int x, int y) {
-	if ((0 <= x) && (x < DIMENSION_OF_MAP) && (0 <= y) && (y < DIMENSION_OF_MAP) && (map[x][y].occupied_by != NULL) &&
+	if ((0 <= x) && (x < DIMENSION_OF_MAP_X) && (0 <= y) && (y < DIMENSION_OF_MAP_Y) && (map[x][y].occupied_by != NULL) &&
 			(map[x][y].explored == 0) && (map[x][y].occupied_by->team != player_id)) {
 		return 1;
 	} else {
@@ -419,13 +409,13 @@ void move_cursor(keypress move, int *sel_x, int *sel_y) {
 	if (move == UP && *sel_y > 0) {
 			*sel_y -= 1;
 			draw_cursor(*sel_x, *sel_y + 1, *sel_x, *sel_y, 0xF81F);
-	} else if (move == DOWN && *sel_y < DIMENSION_OF_MAP - 1) {
+	} else if (move == DOWN && *sel_y < DIMENSION_OF_MAP_Y - 1) {
 			*sel_y += 1;
 			draw_cursor(*sel_x, *sel_y - 1, *sel_x, *sel_y, 0xF81F);
 	} else if (move == LEFT && *sel_x > 0) {
 			*sel_x -= 1;
 			draw_cursor(*sel_x + 1, *sel_y, *sel_x, *sel_y, 0xF81F);
-	} else if (move == RIGHT && *sel_x < DIMENSION_OF_MAP - 1) {
+	} else if (move == RIGHT && *sel_x < DIMENSION_OF_MAP_X - 1) {
 			*sel_x += 1;
 			draw_cursor(*sel_x - 1, *sel_y, *sel_x, *sel_y, 0xF81F);
 	}

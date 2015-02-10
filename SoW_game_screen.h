@@ -27,9 +27,10 @@
 /* MAP DEFINITIONS */
 #define SIZE_OF_TILE 	16
 #define SIZE_OF_MAP 	128
-#define DIMENSION_OF_MAP 8
-#define MAP_CORNER_X 	96
-#define MAP_CORNER_Y 	56
+#define DIMENSION_OF_MAP_X 16
+#define DIMENSION_OF_MAP_Y 10
+#define MAP_CORNER_X 	32
+#define MAP_CORNER_Y 	40
 #define CHARS_PER_PLAYER 3
 #define NO_PLAYERS 		 2
 
@@ -99,8 +100,6 @@ int distance; //Needed for Path Finding
 
 typedef struct {
 character characters[CHARS_PER_PLAYER];
-position upper_boundary; // Territory in which can position players
-position lower_boundary;
 int characters_remaining;
 } player[2];
 
