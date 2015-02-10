@@ -35,9 +35,9 @@
 #define NO_PLAYERS 		 2
 
 typedef enum {
-GRASS,
-WATER,
-CHARACTER
+	GRASS,
+	WATER,
+	ROCK
 } sprite;
 
 typedef enum {
@@ -102,5 +102,7 @@ typedef struct {
 character characters[CHARS_PER_PLAYER];
 int characters_remaining;
 } player[2];
+
+void create_water();
 
 
