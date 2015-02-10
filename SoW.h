@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "io.h"
+#include "sys/alt_timestamp.h"
 #include "Altera_UP_SD_Card_Avalon_Interface.h"
 
 /* Defines */
@@ -54,7 +55,7 @@ char *KeyInput;
 
 /* Functions defined by startup code */
 void keyboard_init(void);
-void keyboard_read(void);
+char* keyboard_read(void);
 void keyboard_enable_ISR(void);
 
 void audio_init(void);
@@ -90,7 +91,7 @@ void music_file_size(void);
 void music_enable_ISR(void);
 void audio_isr(void * context, alt_u32 id);
 void music_file_load(void);
-void music_GO(char * File);
+void music_GO(void);
 
 void play_game(void);
 

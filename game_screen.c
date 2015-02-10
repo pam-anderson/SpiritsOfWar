@@ -130,26 +130,18 @@ void init_timer() {
 }
 
 void animate_to_tile(int colour, int dx, int dy, int old_x, int old_y, int new_x, int new_y) {
-	int i = 0, j = 0;
+	int i = 0;
+	int ticks_per_mvmnt = alt_timestamp_freq() / 24;
+
 	for(i = 0; i < 16; i++) {
-		//init_timer();
-		//printf(" Starting Timer\n");
-		//IOWR_16DIRECT(TIMER_BASE, 4, 1 << 2);
 		draw_sprite(map[old_x][old_y].pos.x, map[old_x][old_y].pos.y, map[old_x][old_y].type);
 		draw_sprite(map[new_x][new_y].pos.x, map[new_x][new_y].pos.y, map[new_x][new_y].type);
 		alt_up_pixel_buffer_dma_draw_box(pixel_buffer, map[old_x][old_y].pos.x + i * dx, map[old_x][old_y].pos.y + i * dy,
 				map[old_x][old_y].pos.x + SIZE_OF_TILE - 1 + i * dx, map[old_x][old_y].pos.y + SIZE_OF_TILE - 1 + i * dy,
 				colour, 0);
-		j = 0;
-		while(j < 10000) {
-			j++;
-		}
-		//printf(" Waiting for timer to expire...\n");
-		//int done = 0;
-		//while (! done) {
-		//	int status = IORD_16DIRECT(TIMER_BASE, 0);
-		//	done = status & 0x1;
-		//}
+
+		alt_timestamp_start();
+		while ((int)alt_timestamp() < ticks_per_mvmnt) {}
 	}
 }
 
