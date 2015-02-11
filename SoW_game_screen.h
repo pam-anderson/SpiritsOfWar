@@ -47,15 +47,6 @@ typedef enum {
 } character_option;
 
 typedef enum {
-	UP,
-	DOWN,
-	LEFT,
-	RIGHT,
-	ENTER,
-	ESC
-} keypress;
-
-typedef enum {
 	WARRIOR,
 	RANGER,
 	MAGE
@@ -71,38 +62,62 @@ typedef struct {
 }class_defaults;
 
 typedef struct {
-int x;
-int y;
+	int x;
+	int y;
 } position;
 
 typedef struct {
-position pos;
-class class;
-int hp;
-int atk;
-int def;
-int rng;
-int colour;
-int team; // Player ID
-int id;   // Character ID
-int movement;
-character_option move;
+	position pos;
+	class class;
+	int hp;
+	int atk;
+	int def;
+	int rng;
+	int colour;
+	int team; // Player ID
+	int id;   // Character ID
+	int movement;
+	character_option move;
 } character;
 
 typedef struct {
-position coords;
-position pos;
-sprite type;
-character* occupied_by;
-int explored; // Used in DFS
-int distance; //Needed for Path Finding
+	position coords;
+	position pos;
+	sprite type;
+	character* occupied_by;
+	int explored; // Used in DFS
+	int distance; //Needed for Path Finding
 } game_tile;
 
 typedef struct {
-character characters[CHARS_PER_PLAYER];
-int characters_remaining;
+	character characters[CHARS_PER_PLAYER];
+	int characters_remaining;
 } player[2];
 
-void create_water();
+/* Map tiles */
+game_tile map[DIMENSION_OF_MAP_X][DIMENSION_OF_MAP_Y];
 
+/* Player */
+player Players[NO_PLAYERS];
+
+/* Start grids of characters */
+int start_pos[NO_PLAYERS][CHARS_PER_PLAYER][2] = {{{0, DIMENSION_OF_MAP_Y - 2}, {0, DIMENSION_OF_MAP_Y - 1},
+		{1, DIMENSION_OF_MAP_Y - 1}}, {{DIMENSION_OF_MAP_X - 2, 0}, {DIMENSION_OF_MAP_X - 1, 0},
+		{DIMENSION_OF_MAP_X - 1, 1}}};
+
+/* Coordinates of top left corner of health bar, and current highlighting colour */
+static int healthbar_pos[NO_PLAYERS][CHARS_PER_PLAYER][2] = {{{29, 15}, {123, 15}, {217, 15}},
+		{{29, 214}, {123, 214}, {217, 214}}};
+
+/* Character class default stats */
+static class_defaults classes[NUM_OF_CLASSES] = {
+		{WARRIOR, WARRIOR_HP, WARRIOR_ATTACK, WARRIOR_DEFENSE, WARRIOR_RANGE, WARRIOR_MOVEMENT},
+		{RANGER, RANGER_HP, RANGER_ATTACK, RANGER_DEFENSE, RANGER_RANGE, RANGER_MOVEMENT},
+		{MAGE, MAGE_HP, MAGE_ATTACK, MAGE_DEFENSE, MAGE_RANGE, MAGE_MOVEMENT} };
+
+int colours[NO_PLAYERS][CHARS_PER_PLAYER] = {{0xF808, 0x7E0, 0x1F}, {0xE700, 0xE70, 0xE7}};
+char blinker = 0xFFFF;
+int main_player_id = 0;
+
+int is_turn_done(int);
 

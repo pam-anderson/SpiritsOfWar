@@ -1,14 +1,13 @@
 #include "SoW.h"
-#include "altera_up_avalon_video_pixel_buffer_dma.h"
-#include "altera_up_avalon_video_character_buffer_with_dma.h"
-#include <stdio.h>
 
 typedef enum {
     START,
     INSTR
 } menu_option;
 
-int menu_pos[2] = {120, 140};
+static int menu_pos[2] = {120, 140};
+char blinker1 = 0xFFFF;
+menu_option menu = START;
 
 /*
  * @brief Draws the start menu to the screen.
@@ -40,47 +39,54 @@ void draw_menu() {
  * @param new_position -- New position of selection arrow - index of menu_pos array
  */
 void move_arrow(int curr_position, int new_position) {
-	alt_up_pixel_buffer_dma_draw_box(pixel_buffer, 110, menu_pos[curr_position], 114, menu_pos[curr_position] + 4, 0x0000, 0);
-	alt_up_pixel_buffer_dma_draw_box(pixel_buffer, 110, menu_pos[new_position], 114, menu_pos[new_position] + 4, 0x3456, 0);
+	alt_up_pixel_buffer_dma_draw_box(pixel_buffer, 110, menu_pos[curr_position], 114,
+			menu_pos[curr_position] + 4, 0x0000, 0);
+	alt_up_pixel_buffer_dma_draw_box(pixel_buffer, 110, menu_pos[new_position], 114,
+			menu_pos[new_position] + 4, 0x3456, 0);
+}
+
+alt_u32 alarm_cursor_isr(void* context) {
+	blinker1 = ~blinker1;
+	alt_up_pixel_buffer_dma_draw_box(pixel_buffer, 110, menu_pos[(int)menu], 114, menu_pos[(int)menu] + 4,
+			0x3456 & blinker1, 0);
+	return alt_ticks_per_second() / 4;
 }
 
 /*
  * @brief Draw the main menu, then wait on key presses to move selection arrow and change screens.
  */
 void show_menu() {
-	  menu_option menu = START;
+	  keypress key;
+	  int ticks_per_interrupt = alt_ticks_per_second() / 4;
+	  alt_alarm_start(&alarm, ticks_per_interrupt, alarm_cursor_isr, NULL);
 
 	  draw_menu();
 	  move_arrow(menu, menu);
-	  serial_port = alt_up_rs232_open_dev(RS232_NAME);
-	  // Clear FIFO
-	  alt_up_rs232_read_data(serial_port, SERIAL_DATA_LOC, SERIAL_PAR_LOC);
-
-	  while(1){
-		  while(alt_up_rs232_read_data(serial_port, SERIAL_DATA_LOC, SERIAL_PAR_LOC) == -1){
-			  // Wait for character to come in
-		  }
-
-		  if((*SERIAL_DATA_LOC == 'w') || (*SERIAL_DATA_LOC == 's')) {
+	  while(1) {
+		  key = get_player_input(0);
+		  if((key == UP) || (key == DOWN)) {
 			  // Navigating up/down the menu
-			  if(menu == START) {
-				  menu = INSTR;
-				  move_arrow(START, INSTR);
-			  } else {
-				  menu = START;
-				  move_arrow(INSTR, START);
-			  }
-		  } else if (*SERIAL_DATA_LOC == ' ') {
-			  // Menu option selected
-			  if(menu == INSTR) {
-				  show_instructions();
-			  } else {
-				  play_game();
-			  }
-			  draw_menu();
-			  move_arrow(menu, menu);
+		  	  if(menu == START) {
+		  		  menu = INSTR;
+		  		  move_arrow(START, INSTR);
+		  	  } else {
+		  		  menu = START;
+		  		  move_arrow(INSTR, START);
+		  	  }
+		  } else if (key == ENTER) {
+		  	  // Menu option selected
+		  	  if(menu == INSTR) {
+		  		  alt_alarm_stop(&alarm);
+		  		  show_instructions();
+		  		  alt_alarm_start(&alarm, ticks_per_interrupt, alarm_cursor_isr, NULL);
+		  	  } else {
+		  		  alt_alarm_stop(&alarm);
+		  		  play_game();
+		  		  alt_alarm_start(&alarm, ticks_per_interrupt, alarm_cursor_isr, NULL);
+		  	  }
+		  	  draw_menu();
+		  	  move_arrow(menu, menu);
 		  }
-		  printf("data: %c\n", *SERIAL_DATA_LOC);
 	  }
 }
 
