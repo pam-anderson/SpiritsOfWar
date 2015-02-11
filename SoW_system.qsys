@@ -124,6 +124,14 @@
          type = "String";
       }
    }
+   element gpio_com_0.avalon_slave_0
+   {
+      datum baseAddress
+      {
+         value = "17472";
+         type = "String";
+      }
+   }
    element pixel_drawer_0.avalon_slave_0
    {
       datum baseAddress
@@ -133,14 +141,6 @@
       }
    }
    element gpio_master_0.avalon_slave_0
-   {
-      datum baseAddress
-      {
-         value = "17472";
-         type = "String";
-      }
-   }
-   element gpio_com_0.avalon_slave_0
    {
       datum baseAddress
       {
@@ -284,14 +284,6 @@
          type = "int";
       }
    }
-   element onchip_memory2_0.s1
-   {
-      datum _lockedAddress
-      {
-         value = "1";
-         type = "boolean";
-      }
-   }
    element timer_0.s1
    {
       datum baseAddress
@@ -300,11 +292,11 @@
          type = "String";
       }
    }
-   element switches.s1
+   element new_sdram_controller_0.s1
    {
       datum baseAddress
       {
-         value = "16480";
+         value = "16777216";
          type = "String";
       }
    }
@@ -316,12 +308,20 @@
          type = "String";
       }
    }
-   element new_sdram_controller_0.s1
+   element switches.s1
    {
       datum baseAddress
       {
-         value = "16777216";
+         value = "16480";
          type = "String";
+      }
+   }
+   element onchip_memory2_0.s1
+   {
+      datum _lockedAddress
+      {
+         value = "1";
+         type = "boolean";
       }
    }
    element scaler
@@ -395,7 +395,7 @@
  <parameter name="projectName" value="SoW.qpf" />
  <parameter name="sopcBorderPoints" value="false" />
  <parameter name="systemHash" value="1" />
- <parameter name="timeStamp" value="1423428193890" />
+ <parameter name="timeStamp" value="1423634282167" />
  <parameter name="useTestBenchNamingPattern" value="false" />
  <instanceScript></instanceScript>
  <interface name="clk" internal="clk_0.clk_in" type="clock" dir="end" />
@@ -907,7 +907,9 @@
  <module kind="gpio_com" version="1.0" enabled="0" name="gpio_com_0">
   <parameter name="AUTO_CLOCK_CLOCK_RATE" value="50000000" />
  </module>
- <module kind="gpio_master" version="1.0" enabled="1" name="gpio_master_0" />
+ <module kind="gpio_master" version="1.0" enabled="1" name="gpio_master_0">
+  <parameter name="AUTO_CLOCK_CLOCK_RATE" value="50000000" />
+ </module>
  <connection
    kind="avalon"
    version="13.0"
