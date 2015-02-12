@@ -27,7 +27,7 @@ static alt_up_audio_dev *audio;
  */
 void music_choose(int a)
 {
-	trigger =  a +1;
+	trigger =  a;
 }
 
 /*
