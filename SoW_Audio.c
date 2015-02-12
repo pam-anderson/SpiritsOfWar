@@ -257,7 +257,6 @@ void audio_isr(void * context, alt_u32 id)
 				music_data_index++;
 		}
 	}
-
 	alt_up_audio_write_fifo(audio, music_buff, 110, ALT_UP_AUDIO_LEFT);
 	alt_up_audio_write_fifo(audio, music_buff, 110, ALT_UP_AUDIO_RIGHT);
 }
@@ -271,21 +270,14 @@ void music_file_load(void){
 	unsigned int audio_data[2];
 	if(strcmp(file_select,"MUS.WAV") == 0)
 		music_data_count = 0;
-
 	music_buff = (unsigned int *) malloc (110 * sizeof(unsigned int));
-
-	if(strcmp(file_select, "MUS.WAV") != 0)
-	{
-		for(l = 0; l < NumEvents; l++)
-		{
+	if(strcmp(file_select, "MUS.WAV") != 0)	{
+		for(l = 0; l < NumEvents; l++)	{
 			if(file_select == Events[l].filename)
 				break;
 		}
-
 		Events[l].music_data = (unsigned int *) malloc (Events[l].size/2 * sizeof(unsigned int));
-
-		for(i = 0; i < (Events[l].size/2) ; i++)
-		{
+		for(i = 0; i < (Events[l].size/2) ; i++){
 			for( j = 0; j < 2; j++)
 				audio_data[j] = alt_up_sd_card_read(fd) & (0x00FF) ;
 
@@ -303,18 +295,12 @@ void music_file_load(void){
 
 	else{
 		music_data = (unsigned int *) malloc (wav_size/2 * sizeof(unsigned int));
-
-		for(i = 0; i < wav_size/2 ; i++)
-		{
+		for(i = 0; i < wav_size/2 ; i++){
 			for(j = 0; j < 2; j++)
 				audio_data[j] = alt_up_sd_card_read(fd) & (0x00FF);
-
 			k = (unsigned char) audio_data[1] << BYTE | (unsigned char) audio_data[0];
-
 			music_data[music_data_count] = k;
-
 			music_data_count++;
-
 		}
 	}
 }
