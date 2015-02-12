@@ -18,7 +18,7 @@
   	  printf("Device : %d\n", ps2->device_type);
   }
 
-  void keyboard_read(void)
+ char* keyboard_read(void)
   {
 	 char c;
   	 while(1)
@@ -30,11 +30,13 @@
   				 translate_make_code(code_type, buff, KeyInput);
   				 printf("%c\n", *KeyInput);
 
-  		  		 return;
+  		  		 return KeyInput;
   			}
   		 }
 
   	 }
+
+  	 return KeyInput;
 
   }
 

@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "io.h"
+#include "sys/alt_timestamp.h"
 #include "Altera_UP_SD_Card_Avalon_Interface.h"
 
 /* Defines */
@@ -32,133 +33,29 @@
 /* MEMORY LOCATIONS */
 #define SERIAL_DATA_LOC (alt_u8 *) 0x0
 #define SERIAL_PAR_LOC (alt_u8 *) 0x4
-#define DRAWER_BASE (volatile int*) 0x4400
+#define DRAWER_BASE (volatile int*) 0x4800
 #define SERIAL_BASE (volatile int *) 0x4070
 #define KEY_BASE 0x4078
 #define TIMER_BASE 0x4000
 
-/* MAP DEFINITIONS */
-#define SIZE_OF_TILE 	16
-#define SIZE_OF_MAP 	128
-#define DIMENSION_OF_MAP 8
-#define MAP_CORNER_X 	96
-#define MAP_CORNER_Y 	56
-#define CHARS_PER_PLAYER 3
-#define NO_PLAYERS 		 2
+/* Music Event Trigger Struct Move Later? */
+struct Event {
+	char * Filename;
+	int initialized;
+	int size;
+	unsigned int *MusicData;
+	unsigned int MusicDataCount;
+	int MusicDataIndex;
+};
+
+#define NumEvents 3
+struct Event Events[NumEvents];
 
 char *KeyInput;
 
-typedef struct {
-int x;
-int y;
-} position;
-
-typedef enum {
-GRASS,
-WATER,
-CHARACTER,
-PLAYER_0_CHAR_0_STANDING,
-PLAYER_0_CHAR_0_FORWARD1,
-PLAYER_0_CHAR_0_FORWARD2,
-PLAYER_0_CHAR_0_BACK1,
-PLAYER_0_CHAR_0_BACK2,
-PLAYER_0_CHAR_0_RIGHT1,
-PLAYER_0_CHAR_0_RIGHT2,
-PLAYER_0_CHAR_0_LEFT1,
-PLAYER_0_CHAR_0_LEFT2,
-PLAYER_0_CHAR_1_STANDING,
-PLAYER_0_CHAR_1_FORWARD1,
-PLAYER_0_CHAR_1_FORWARD2,
-PLAYER_0_CHAR_1_BACK1,
-PLAYER_0_CHAR_1_BACK2,
-PLAYER_0_CHAR_1_RIGHT1,
-PLAYER_0_CHAR_1_RIGHT2,
-PLAYER_0_CHAR_1_LEFT1,
-PLAYER_0_CHAR_1_LEFT2,
-PLAYER_0_CHAR_2_STANDING,
-PLAYER_0_CHAR_2_FORWARD1,
-PLAYER_0_CHAR_2_FORWARD2,
-PLAYER_0_CHAR_2_BACK1,
-PLAYER_0_CHAR_2_BACK2,
-PLAYER_0_CHAR_2_RIGHT1,
-PLAYER_0_CHAR_2_RIGHT2,
-PLAYER_0_CHAR_2_LEFT1,
-PLAYER_0_CHAR_2_LEFT2,
-PLAYER_1_CHAR_0_STANDING,
-PLAYER_1_CHAR_0_FORWARD1,
-PLAYER_1_CHAR_0_FORWARD2,
-PLAYER_1_CHAR_0_BACK1,
-PLAYER_1_CHAR_0_BACK2,
-PLAYER_1_CHAR_0_RIGHT1,
-PLAYER_1_CHAR_0_RIGHT2,
-PLAYER_1_CHAR_0_LEFT1,
-PLAYER_1_CHAR_0_LEFT2,
-PLAYER_1_CHAR_1_STANDING,
-PLAYER_1_CHAR_1_FORWARD1,
-PLAYER_1_CHAR_1_FORWARD2,
-PLAYER_1_CHAR_1_BACK1,
-PLAYER_1_CHAR_1_BACK2,
-PLAYER_1_CHAR_1_RIGHT1,
-PLAYER_1_CHAR_1_RIGHT2,
-PLAYER_1_CHAR_1_LEFT1,
-PLAYER_1_CHAR_1_LEFT2,
-PLAYER_1_CHAR_2_STANDING,
-PLAYER_1_CHAR_2_FORWARD1,
-PLAYER_1_CHAR_2_FORWARD2,
-PLAYER_1_CHAR_2_BACK1,
-PLAYER_1_CHAR_2_BACK2,
-PLAYER_1_CHAR_2_RIGHT1,
-PLAYER_1_CHAR_2_RIGHT2,
-PLAYER_1_CHAR_2_LEFT1,
-PLAYER_1_CHAR_2_LEFT2
-} sprite;
-
-typedef enum {
-    MOVE,
-    ATTACK,
-    DONE
-} character_option;
-
-typedef struct {
-position pos;
-int hp;
-int atk;
-int def;
-int rng;
-int colour;
-int team;
-int id;
-int movement;
-character_option move;
-sprite standing;
-sprite forward1;
-sprite forward2; //flip sprite in hardware right top to left top
-sprite back1;
-sprite back2; //flip sprite in hardware right top to left top
-sprite right1;
-sprite right2;
-sprite left1;//flip right sprite same as above.
-sprite left2;//
-} character;
-
-typedef struct {
-position coords;
-position pos;
-sprite type;
-character* occupied_by;
-int explored; // Used in DFS
-} game_tile;
-
-typedef struct {
-character characters[CHARS_PER_PLAYER];
-position upper_boundary; // Territory in which can position players
-position lower_boundary;
-int characters_remaining;
-} player[2];
-
 /* Functions defined by startup code */
 void keyboard_init(void);
-void keyboard_read(void);
+char* keyboard_read(void);
 void keyboard_enable_ISR(void);
 
 void audio_init(void);
@@ -173,13 +70,14 @@ void show_instructions(void);
 void show_menu(void);
 void show_game(void);
 void animate(int, int, int, int, int);
-void animate_to_tile(int, int, int, int, int, int, int);
+void animate_to_tile(int, int, int, int, int, int, int, int);
+void get_path(int, int, int*);
 void init_timer(void);
 
 void sdcard_init() ;
 int sdcard_write_file(char* file_name, alt_u8* buffer, int size) ;
 int sdcard_read_file(char* file_name, alt_u8* buffer, int size);
-
+void load_sprite(char *, int *);
 alt_up_rs232_dev *serial_port;
 alt_up_char_buffer_dev *char_buffer;
 alt_up_pixel_buffer_dma_dev* pixel_buffer;
@@ -193,7 +91,7 @@ void music_file_size(void);
 void music_enable_ISR(void);
 void audio_isr(void * context, alt_u32 id);
 void music_file_load(void);
-void music_GO(char * File);
+void music_GO(void);
 
 void play_game(void);
 
