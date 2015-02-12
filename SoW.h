@@ -19,12 +19,13 @@
 #define	TRUE 1
 
 /*Audio Event Defines*/
-#define WARRIOR_ATK	0
-#define ARCHER_ATK	1
-#define MAGE_ATK	2
-#define MOVE		3
-#define UNIT_DIE	4
-
+typedef enum{
+	WARRIOR_ATK_FX,
+	ARCHER_ATK_FX,
+	MAGE_ATK_FX,
+	MOVE_FX,
+	UNIT_DIE_FX
+} sound_fx;
 
 /* Universal return constants */
 #define	OK 1 /* system call ok */
