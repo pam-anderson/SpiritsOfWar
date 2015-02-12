@@ -18,6 +18,14 @@
 #define	FALSE 0
 #define	TRUE 1
 
+/*Audio Event Defines*/
+#define WARRIOR_ATK	0
+#define ARCHER_ATK	1
+#define MAGE_ATK	2
+#define MOVE		3
+#define UNIT_DIE	4
+
+
 /* Universal return constants */
 #define	OK 1 /* system call ok */
 #define	SYSERR -1 /* system call failed */
