@@ -66,6 +66,8 @@ void music_init(void){
 	alt_up_av_config_dev * audio_init = alt_up_av_config_open_dev("/dev/audio_and_video_config_0");
 	alt_up_sd_card_dev *device = NULL;
 	device = alt_up_sd_card_open_dev("/dev/sdcard");
+	alt_up_sd_card_is_Present();
+	alt_up_sd_card_is_FAT16();
 	for(i = 0; i < NumEvents; i++)	{
 		Events[i].filename = NULL;
 		Events[i].initialized = 0;
