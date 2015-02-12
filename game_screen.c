@@ -142,6 +142,19 @@ void draw_sprite(int x, int y, sprite type) {
 	IOWR_32DIRECT(DRAWER_BASE, 8, type);
 	IOWR_32DIRECT(DRAWER_BASE, 12, 1); //Start
 	while(IORD_32DIRECT(DRAWER_BASE, 24) == 0) {}
+	if(type == GRASS) alt_up_pixel_buffer_dma_draw_box(pixel_buffer, x, y, x, y, grass[0], 0);
+	else if(type == WATER) alt_up_pixel_buffer_dma_draw_box(pixel_buffer, x, y, x, y, water[0], 0);
+	else if(type == ROCK) alt_up_pixel_buffer_dma_draw_box(pixel_buffer, x, y, x, y, rock[0], 0);
+	else if(type == (GRASS|0x200)) alt_up_pixel_buffer_dma_draw_box(pixel_buffer, x, y, x, y, grass[0]|0xF800, 0);
+	else if(type == (GRASS|0x100) || (type & 0xFF) >= ANIMATION_HARDWARE) alt_up_pixel_buffer_dma_draw_box(pixel_buffer, x, y, x, y, grass[0]|0x001F, 0);
+}
+
+void draw_corner(int px, int py, sprite type) {
+	if(map[px][py].type == GRASS) alt_up_pixel_buffer_dma_draw_box(pixel_buffer, map[px][py].pos.x, map[px][py].pos.y, map[px][py].pos.x, map[px][py].pos.y, grass[0], 0);
+	else if(map[px][py].type == WATER) alt_up_pixel_buffer_dma_draw_box(pixel_buffer, map[px][py].pos.x, map[px][py].pos.y, map[px][py].pos.x, map[px][py].pos.y, water[0], 0);
+	else if(map[px][py].type == ROCK) alt_up_pixel_buffer_dma_draw_box(pixel_buffer, map[px][py].pos.x, map[px][py].pos.y, map[px][py].pos.x, map[px][py].pos.y, rock[0], 0);
+	else if(map[px][py].type == (GRASS|0x100)) alt_up_pixel_buffer_dma_draw_box(pixel_buffer, map[px][py].pos.x, map[px][py].pos.y, map[px][py].pos.x, map[px][py].pos.y, grass[0]|0x1F, 0);
+	else if(map[px][py].type == (GRASS|0x200)) alt_up_pixel_buffer_dma_draw_box(pixel_buffer, map[px][py].pos.x, map[px][py].pos.y, map[px][py].pos.x, map[px][py].pos.y, grass[0]|0xF800, 0);
 }
 
 /*
@@ -171,7 +184,10 @@ void draw_characters() {
 	for(i = 0; i < NO_PLAYERS; i++) {
 		for(k = 0; k < CHARS_PER_PLAYER; k++) {
 			if(Players[i]->characters[k].hp > 0) {
-				draw_sprite(map[Players[i]->characters[k].pos.x][Players[i]->characters[k].pos.y].pos.x, map[Players[i]->characters[k].pos.x][Players[i]->characters[k].pos.y].pos.y, Players[i]->characters[k].standing);
+				int px = Players[i]->characters[k].pos.x;
+				int py = Players[i]->characters[k].pos.y;
+				draw_sprite(map[px][py].pos.x, map[px][py].pos.y, Players[i]->characters[k].standing);
+				draw_corner(px, py, map[px][py].type);
 			}
 		}
 	}
@@ -341,6 +357,7 @@ void animate_to_tile(int ram_location, int dx, int dy, int old_x, int old_y, int
 		else {
 			draw_sprite(map[old_x][old_y].pos.x + i * dx, map[old_x][old_y].pos.y + i * dy, ram_location + type - 1);
 		}
+		draw_corner(old_x, old_x, map[old_x][old_y].type);
 		while ((int)alt_timestamp() < ticks_per_mvmnt) {}
 	}
 	draw_sprite(map[old_x][old_y].pos.x, map[old_x][old_y].pos.y, map[old_x][old_y].type);
@@ -457,7 +474,7 @@ int tile_is_free(int player_id, int x, int y) {
 
 int tile_is_attackable(int player_id, int x, int y) {
 	if ((0 <= x) && (x < DIMENSION_OF_MAP_X) && (0 <= y) && (y < DIMENSION_OF_MAP_Y) &&
-			(map[x][y].explored == 0) && ((map[x][y].occupied_by->team != player_id) || (map[x][y].occupied_by == NULL))) {
+			(map[x][y].explored == 0) && ((map[x][y].occupied_by->team != player_id) || (map[x][y].occupied_by == NULL)) && map[x][y].type == GRASS) {
 		return 1;
 	} else {
 		return 0;
@@ -499,6 +516,7 @@ void randomize_map(void) {
 		map[src_x + 2][src_y].type = ROCK;
 		draw_sprite(map[src_x + 2][src_y].pos.x, map[src_x + 2][src_y].pos.y, ROCK);
 	}
+	draw_map();
 	free(valid_moves);
 }
 
@@ -602,8 +620,10 @@ void do_movement(int player_id, int character_id) {
 	dfs_map(player_id, character_id, old_x, old_y, Players[player_id]->characters[character_id].movement,valid_moves, &tile_is_free);
 	for(i = 0; valid_moves[i] != 0; i++) {
 		map[valid_moves[i]->coords.x][valid_moves[i]->coords.y].type |= 0x100;
+		draw_sprite(map[valid_moves[i]->coords.x][valid_moves[i]->coords.y].pos.x, map[valid_moves[i]->coords.x][valid_moves[i]->coords.y].pos.y, map[valid_moves[i]->coords.x][valid_moves[i]->coords.y].type);
+		draw_characters();
 	}
-	draw_map();
+	
 	if (select_space(valid_moves, &new_x, &new_y)) {
 		move_player(player_id, character_id, old_x, old_y, new_x, new_y);
 		Players[player_id]->characters[character_id].move = ATTACK;
@@ -611,10 +631,11 @@ void do_movement(int player_id, int character_id) {
 
 	for(i = 0; valid_moves[i] != 0; i++) {
 		map[valid_moves[i]->coords.x][valid_moves[i]->coords.y].type &= 0x0FF;
+		draw_sprite(map[valid_moves[i]->coords.x][valid_moves[i]->coords.y].pos.x, map[valid_moves[i]->coords.x][valid_moves[i]->coords.y].pos.y, map[valid_moves[i]->coords.x][valid_moves[i]->coords.y].type);
+		draw_characters();
 		valid_moves[i]->explored = 0;
 		valid_moves[i]->distance = 10000;
 	}
-	draw_map();
 	free(valid_moves);
 }
 
@@ -629,18 +650,20 @@ void do_attack(int player_id, int character_id) {
 	dfs_map(player_id, character_id, old_x, old_y, Players[player_id]->characters[character_id].rng,valid_attacks, &tile_is_attackable);
 	for(i = 0; valid_attacks[i] != 0; i++) {
 		map[valid_attacks[i]->coords.x][valid_attacks[i]->coords.y].type |= 0x200;
+		map[valid_attacks[i]->coords.x][valid_attacks[i]->coords.y].type |= 0x200;
+		draw_sprite(map[valid_attacks[i]->coords.x][valid_attacks[i]->coords.y].pos.x, map[valid_attacks[i]->coords.x][valid_attacks[i]->coords.y].pos.y, map[valid_attacks[i]->coords.x][valid_attacks[i]->coords.y].type);
 	}
-	draw_map();
 	if (select_space(valid_attacks, &new_x, &new_y)) {
 		attack_player(player_id, character_id, new_x, new_y);
 		Players[player_id]->characters[character_id].move = DONE;
 	}
 	for(i = 0; valid_attacks[i] != 0; i++) {
 		map[valid_attacks[i]->coords.x][valid_attacks[i]->coords.y].type &= 0x0FF;
+		map[valid_attacks[i]->coords.x][valid_attacks[i]->coords.y].type |= 0x200;
+		draw_sprite(map[valid_attacks[i]->coords.x][valid_attacks[i]->coords.y].pos.x, map[valid_attacks[i]->coords.x][valid_attacks[i]->coords.y].pos.y, map[valid_attacks[i]->coords.x][valid_attacks[i]->coords.y].type);
 		valid_attacks[i]->explored = 0;
 		valid_attacks[i]->distance = 10000;
 	}
-	draw_map();
 	free(valid_attacks);
 }
 
