@@ -250,24 +250,32 @@ character_option find_player_move(int player_id) {
  */
 alt_u32 alarm_blink_isr(void* context) {
 	int character_id;
+	int player_id;
+	char colour;
 	character_option curr_move = find_player_move(main_player_id);
 	blinker = ~blinker;
-	// TODO: Sometimes highlight stays after changing players
-	for(character_id = 0; character_id < CHARS_PER_PLAYER; character_id++) {
-		if(Players[main_player_id]->characters[character_id].move == curr_move) {
-			alt_up_pixel_buffer_dma_draw_rectangle(pixel_buffer,
+	for(player_id = 0; player_id < NO_PLAYERS; player_id++) {
+		if(player_id != main_player_id) {
+			colour = 0;
+		} else {
+			colour = 0xFFFF;
+		}
+		for(character_id = 0; character_id < CHARS_PER_PLAYER; character_id++) {
+			if(Players[main_player_id]->characters[character_id].move == curr_move) {
+				alt_up_pixel_buffer_dma_draw_rectangle(pixel_buffer,
 					healthbar_pos[main_player_id][character_id][0] - SIZE_OF_TILE/2 - 1,
 					healthbar_pos[main_player_id][character_id][1] - SIZE_OF_TILE/2 + 1,
 					healthbar_pos[main_player_id][character_id][0] + SIZE_OF_TILE/2,
 					healthbar_pos[main_player_id][character_id][1] + SIZE_OF_TILE/2 + 3,
-					blinker, 0);
-		} else {
-			alt_up_pixel_buffer_dma_draw_rectangle(pixel_buffer,
+					blinker * colour, 0);
+			} else {
+				alt_up_pixel_buffer_dma_draw_rectangle(pixel_buffer,
 					healthbar_pos[main_player_id][character_id][0] - SIZE_OF_TILE/2 - 1,
 					healthbar_pos[main_player_id][character_id][1] - SIZE_OF_TILE/2 + 1,
 					healthbar_pos[main_player_id][character_id][0] + SIZE_OF_TILE/2,
 					healthbar_pos[main_player_id][character_id][1] + SIZE_OF_TILE/2 + 3,
 					0, 0);
+			}
 		}
 	}
 	return alt_ticks_per_second() / 4;
@@ -340,6 +348,7 @@ void animate_to_tile(int ram_location, int dx, int dy, int old_x, int old_y, int
 
 void animate(int ram_location, int old_x, int old_y, int new_x, int new_y) {
 	int dist = 1;
+	music_choose(MOVE_SND);
 	int *path = (int *) calloc(map[new_x][new_y].distance, sizeof(int));
 	get_path(new_x, new_y, path);
 	while(dist <= map[new_x][new_y].distance) {
@@ -488,7 +497,7 @@ void randomize_map(void) {
 		src_x = rand() % (DIMENSION_OF_MAP_X - 4);
 		src_y = rand() % DIMENSION_OF_MAP_Y;
 		map[src_x + 2][src_y].type = ROCK;
-		draw_sprite(map[src_x + 3][src_y].pos.x, map[src_x + 3][src_y].pos.y, ROCK);
+		draw_sprite(map[src_x + 2][src_y].pos.x, map[src_x + 2][src_y].pos.y, ROCK);
 	}
 	free(valid_moves);
 }
@@ -527,12 +536,14 @@ void update_healthbar(int player_id, int character_id) {
 
 void character_is_dead(int player_id, int character_id) {
 	// Remove character from map
+	music_choose(UNIT_DIE);
 	move_player(player_id, character_id, Players[player_id]->characters[character_id].pos.x,
 			Players[player_id]->characters[character_id].pos.y, -1, -1);
 	Players[player_id]->characters_remaining--;
 }
 
 void attack_player(int player_id, int character_id, int x, int y) {
+	music_choose(Players[player_id]->characters[character_id].class);
 	if(((x == Players[player_id]->characters[character_id].pos.x) &&
 			(y == Players[player_id]->characters[character_id].pos.y)) || map[x][y].occupied_by == NULL) {
 		// If selecting self, it means player chose not to attack
