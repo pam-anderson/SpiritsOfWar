@@ -36,7 +36,7 @@ void music_choose(int a)
 void music_go(){
 	music_init();
 	audio_init();
-	music_load("ee3.wav");
+	music_load("mus.wav");
 	music_load("war.wav");
 	music_load("arch.wav");
 	music_load("mag.wav");
@@ -171,7 +171,7 @@ void music_file_size(void){
 		size[i] = size[4-i-1];
 		size[4-i-1] = temp;
 	}
-	if(strcmp(file_select,"ee3.wav") == 0)	{
+	if(strcmp(file_select,"mus.wav") == 0)	{
 		wav_size = (size[0] << 3*BYTE | size[1] << 2*BYTE | size[2] << BYTE | size[3]) + BYTE;
 		printf("The Size of %s is %i\n", file_select, wav_size);
 		fflush(stdout);
@@ -265,12 +265,12 @@ void music_file_load(void){
 	int i,j,l;
 	short k;
 	unsigned int audio_data[2];
-	if(file_select == "ee3.wav")
+	if(file_select == "mus.wav")
 		music_data_count = 0;
 
 	music_buff = (unsigned int *) malloc (110 * sizeof(unsigned int));
 
-	if(strcmp(file_select, "ee3.wav") != 0)
+	if(strcmp(file_select, "mus.wav") != 0)
 	{
 		for(l = 0; l < NumEvents; l++)
 		{
