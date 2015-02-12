@@ -29,6 +29,8 @@ void music_choose(int a)
 {
 	if(a >= 0 && a < NumEvents)
 		trigger =  a;
+	else
+		printf("ERROR : Music Choose Out of Range!!!\n");
 }
 
 /*
