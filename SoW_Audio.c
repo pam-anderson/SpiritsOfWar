@@ -18,9 +18,6 @@ int music_data_count;
 
 static alt_up_audio_dev *audio;
 
-
-
-
 /*
  *@brief Music Choose chooses which event sound to play.
  *@param a The array value for the desired audio event.
