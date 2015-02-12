@@ -1,25 +1,39 @@
 #include "SoW.h"
 
+#define BYTE 8
 
-char* FileSelect;
-short int fd = 0;
-int WavSize = 0;
-int EventSize = 0;
-unsigned int *MusicBuff;
-unsigned int *MusicData;
-int MusicDataIndex = 0;
-int MusicDataCount;
-static alt_up_audio_dev *audio;
 int trigger = -1;
 
-// Walking, Attack for Warrior, Archer, Mage, Death, Game Over!
+char* file_select;
+short int fd = 0;
 
+int wav_size = 0;
+int event_size = 0;
+
+unsigned int *music_buff;
+unsigned int *music_data;
+
+int music_data_index = 0;
+int music_data_count;
+
+static alt_up_audio_dev *audio;
+
+
+
+
+/*
+ *@brief Music Choose chooses which event sound to play.
+ *@param a The array value for the desired audio event.
+ */
 void music_choose(int a)
 {
 	trigger =  a ;
 }
 
-void music_GO(){
+/*
+ *@brief Music Go initializes the audio and loads the appropriate .wav files and starts the ISR
+ */
+void music_go(){
 	music_init();
 	audio_init();
 	music_load("ee3.wav");
@@ -28,21 +42,25 @@ void music_GO(){
 	music_enable_ISR();
 }
 
+/*
+ *@brief Muisc Load opens the music file, Reads the Meta-Data and Loads the music to RAM
+ *@param File The filename of the file to be loaded.
+ */
 void music_load(char * File){
-	FileSelect = NULL;
-	FileSelect = malloc(sizeof(File));
-	strcpy(FileSelect, File);
-
+	file_select = NULL;
+	file_select = malloc(sizeof(File));
+	strcpy(file_select, File);
 	music_open(File);
-
 	music_file_size();
 	music_file_load();
 }
 
+/*
+ *@brief Music Init, loads the audio_video driver, opens the SD card and initializes the music event struct.
+ */
 void music_init(void){
 	int i;
 	alt_up_av_config_dev * audio_init = alt_up_av_config_open_dev("/dev/audio_and_video_config_0");
-
 	if(audio_init != NULL){
 		printf("Audio Config Set Up!\n");
 		fflush(stdout);
@@ -51,7 +69,6 @@ void music_init(void){
 		printf("Audio Config Not Setup!\n");
 		fflush(stdout);
 	}
-
 	alt_up_sd_card_dev *device = NULL;
 	device = alt_up_sd_card_open_dev("/dev/sdcard");
 	if(device == NULL){
@@ -74,21 +91,21 @@ void music_init(void){
 			}
 		}
 	}
-
 	for(i = 0; i < NumEvents; i++)	{
-		Events[i].Filename = NULL;
+		Events[i].filename = NULL;
 		Events[i].initialized = 0;
 		Events[i].size = 0;
 	}
-
 	printf("Music_init done!\n");
 	fflush(stdout);
 }
 
+/*
+ * @brief Audio Init initializes the audio device
+ */
 void audio_init(void)
 {
 	int i ;
-
 	audio = alt_up_audio_open_dev("/dev/audio_0");
 	if(audio == NULL)	{
 		printf("Audio Device Not Opened!\n");
@@ -99,23 +116,23 @@ void audio_init(void)
 		printf("Audio Device Opened!\n");
 		fflush(stdout);
 	}
-
 	alt_up_audio_reset_audio_core(audio);
-
-	MusicBuff = (unsigned int *) malloc (110 * sizeof(unsigned int));
-
+	music_buff = (unsigned int *) malloc (110 * sizeof(unsigned int));
 	for(i = 0; i < 110; i++)	{
-		MusicBuff[i] = MusicData[MusicDataIndex];
+		music_buff[i] = music_data[music_data_index];
 
-		if(MusicDataIndex >=  MusicDataCount)
-			MusicDataIndex = 0;
+		if(music_data_index >=  music_data_count)
+			music_data_index = 0;
 		else
-			MusicDataIndex++;
+			music_data_index++;
 	}
 }
 
+/*
+ *@brief Music Open opens the file with the desired filename
+ *@param file The filename of the file to be opened
+ */
 void music_open(char *file) {
-
 		fd = alt_up_sd_card_fopen(file, 0);
 		if(fd == -1){
 			printf("Error Opening File\n");
@@ -131,50 +148,50 @@ void music_open(char *file) {
 		}
 }
 
+/*
+ *@brief Music File Size cycles through the header and finds the size of the music file to be loaded
+ *@brief From the read in file it shifts the byte positions in order to position it in FIFO.
+ */
 void music_file_size(void){
 	unsigned int header[40];
 	unsigned int size[4];
 	int temp, i, j = 0;
-
-	/* Cycle Through Header */
 	for(i = 0; i < 40; i++)
 		header[i] = alt_up_sd_card_read(fd);
 
-	for(i = 4; i < 8; i++)	{
+	for(i = 4; i < BYTE; i++)	{
 		size[j] = header[i];
 		j++;
 	}
-
-	/* Reverse Array */
 	for(i = 0; i < 2; ++i)	{
 		temp = size[i];
 		size[i] = size[4-i-1];
 		size[4-i-1] = temp;
 	}
-
-	// Shift to find the size
-	if(strcmp(FileSelect,"ee3.wav") == 0)	{
-		WavSize = (size[0] << 24 | size[1] << 16 | size[2] << 8 | size[3]) + 8;
-		printf("The Size of %s is %i\n", FileSelect, WavSize);
+	if(strcmp(file_select,"ee3.wav") == 0)	{
+		wav_size = (size[0] << 3*BYTE | size[1] << 2*BYTE | size[2] << BYTE | size[3]) + BYTE;
+		printf("The Size of %s is %i\n", file_select, wav_size);
 		fflush(stdout);
 	}
 	else	{
 		for(i = 0; i < NumEvents; i++){
 			if(Events[i].initialized == 0){
 				Events[i].initialized = 1;
-				Events[i].Filename = FileSelect;
+				Events[i].filename = file_select;
 				break;
 			}
 		}
-
-		Events[i].size = (size[0] << 24 | size[1] << 16 | size[2] << 8 | size[3]) + 8;
-		printf("The Size of %s is %i\n", FileSelect, Events[i].size);
+		Events[i].size = (size[0] << 3*BYTE | size[1] << 2*BYTE | size[2] << BYTE | size[3]) + BYTE;
+		printf("The Size of %s is %i\n", file_select, Events[i].size);
 		fflush(stdout);
 	}
 
 
 }
 
+/*
+ *@brief Music Enable ISR enables the audio ISR and allows the audio device to write interrupts.
+ */
 void music_enable_ISR(void){
 	int i;
 	if(alt_irq_register(AUDIO_IRQ, NULL, audio_isr) == 0){
@@ -190,101 +207,106 @@ void music_enable_ISR(void){
 		fflush(stdout);
 
 	for(i = 0; i<NumEvents; i++){
-		Events[i].MusicDataIndex = 0;
+		Events[i].music_data_index = 0;
 	}
 }
 
 
+/*
+ *@brief Audio ISR is the interrupt that is run when the audio interrupt triggers
+ *@brief Audio ISR checks if an event sound is to be played, otherwise it plays the background music.
+ */
 void audio_isr(void * context, alt_u32 id)
 {
 	int BuffCount;
 	if(trigger != -1){
 		for(BuffCount = 0; BuffCount < 110; BuffCount++){
-				MusicBuff[BuffCount] = (MusicData[MusicDataIndex] >> 1) + (Events[trigger].MusicData[Events[trigger].MusicDataIndex]);
+				music_buff[BuffCount] = (music_data[music_data_index] >> 1) + (Events[trigger].music_data[Events[trigger].music_data_index]);
 
-				if(MusicDataIndex >= MusicDataCount)
-					MusicDataIndex = 0;
+				if(music_data_index >= music_data_count)
+					music_data_index = 0;
 				else
-					MusicDataIndex++;
-
-				if(Events[trigger].MusicDataIndex >= Events[trigger].MusicDataCount){
-					Events[trigger].MusicDataIndex = 0;
+					music_data_index++;
+				if(Events[trigger].music_data_index >= Events[trigger].music_data_count){
+					Events[trigger].music_data_index = 0;
 					trigger = -1;
 
 					printf("Interrupt Triggering!\n");
 					fflush(stdout);
 				}
 				else
-					Events[trigger].MusicDataIndex++;
+					Events[trigger].music_data_index++;
 		}
 	}
 	else{
 		fflush(stdout);
 		for(BuffCount = 0; BuffCount < 110; BuffCount++)
 		{
-			MusicBuff[BuffCount] = MusicData[MusicDataIndex];
+			music_buff[BuffCount] = music_data[music_data_index];
 
-			if(MusicDataIndex >= MusicDataCount)
-				MusicDataIndex = 0;
+			if(music_data_index >= music_data_count)
+				music_data_index = 0;
 			else
-				MusicDataIndex++;
+				music_data_index++;
 		}
 	}
 
-	alt_up_audio_write_fifo(audio, MusicBuff, 110, ALT_UP_AUDIO_LEFT);
-	alt_up_audio_write_fifo(audio, MusicBuff, 110, ALT_UP_AUDIO_RIGHT);
+	alt_up_audio_write_fifo(audio, music_buff, 110, ALT_UP_AUDIO_LEFT);
+	alt_up_audio_write_fifo(audio, music_buff, 110, ALT_UP_AUDIO_RIGHT);
 }
 
+/*
+ *@brief Music File Load loads the audio file into memory based on the size of the .wav file. The Sample Size is 110.
+ */
 void music_file_load(void){
 	int i,j,l;
 	short k;
 	unsigned int audio_data[2];
-	if(FileSelect == "ee3.wav")
-		MusicDataCount = 0;
+	if(file_select == "ee3.wav")
+		music_data_count = 0;
 
-	/* 110 is sample size */
-	MusicBuff = (unsigned int *) malloc (110 * sizeof(unsigned int));
+	music_buff = (unsigned int *) malloc (110 * sizeof(unsigned int));
 
-	if(strcmp(FileSelect, "ee3.wav") != 0)
+	if(strcmp(file_select, "ee3.wav") != 0)
 	{
 		for(l = 0; l < NumEvents; l++)
 		{
-			if(FileSelect == Events[l].Filename)
+			if(file_select == Events[l].filename)
 				break;
 		}
 
-		Events[l].MusicData = (unsigned int *) malloc (Events[l].size/2 * sizeof(unsigned int));
+		Events[l].music_data = (unsigned int *) malloc (Events[l].size/2 * sizeof(unsigned int));
 
 		for(i = 0; i < (Events[l].size/2) ; i++)
 		{
 			for( j = 0; j < 2; j++)
 				audio_data[j] = alt_up_sd_card_read(fd) & (0x00FF) ;
 
-			k = (unsigned char) audio_data[1] << 8 | (unsigned char) audio_data[0];
-			Events[l].MusicData[Events[l].MusicDataCount] = k;
+			k = (unsigned char) audio_data[1] << BYTE | (unsigned char) audio_data[0];
+			Events[l].music_data[Events[l].music_data_count] = k;
 
-			Events[l].MusicDataCount++;
+			Events[l].music_data_count++;
 		}
 
-		printf("Music Data Count is now at %i, Size is %i \n", Events[0].MusicDataCount, Events[0].size);
+		printf("Music Data Count is now at %i, Size is %i \n", Events[0].music_data_count, Events[0].size);
 		fflush(stdout);
 
 
 	}
 
 	else{
-		MusicData = (unsigned int *) malloc (WavSize/2 * sizeof(unsigned int));
+		music_data = (unsigned int *) malloc (wav_size/2 * sizeof(unsigned int));
 
-		for(i = 0; i < WavSize/2 ; i++)
+		for(i = 0; i < wav_size/2 ; i++)
 		{
 			for(j = 0; j < 2; j++)
 				audio_data[j] = alt_up_sd_card_read(fd) & (0x00FF);
 
-			k = (unsigned char) audio_data[1] << 8 | (unsigned char) audio_data[0];
+			k = (unsigned char) audio_data[1] << BYTE | (unsigned char) audio_data[0];
 
-			MusicData[MusicDataCount] = k;
+			music_data[music_data_count] = k;
 
-			MusicDataCount++;
+			music_data_count++;
 
 		}
 	}
