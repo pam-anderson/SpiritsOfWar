@@ -27,7 +27,10 @@ static alt_up_audio_dev *audio;
  */
 void music_choose(int a)
 {
-	trigger =  a +1;
+	if(a >= 0 && a < NumEvents)
+		trigger =  a;
+	else
+		printf("ERROR : Music Choose Out of Range!!!\n");
 }
 
 /*
