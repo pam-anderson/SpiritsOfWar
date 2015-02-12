@@ -152,9 +152,10 @@ void draw_sprite(int x, int y, sprite type) {
  * @param y The absolute position of the pixel in the y axis of the top left corner of the character
  * 		  to be drawn beside the health bar.
  */
-void draw_healthbar(int x, int y, int colour) {
+void draw_healthbar(int player_id, int character_id, int x, int y) {
 	// Draw character
-	alt_up_pixel_buffer_dma_draw_box(pixel_buffer, x, y, x + SIZE_OF_TILE/2, y + SIZE_OF_TILE/2, colour, 0);
+	draw_sprite(x - 8, y - 4, Players[player_id]->characters[character_id].standing);
+	//alt_up_pixel_buffer_dma_draw_box(pixel_buffer, x, y, x + SIZE_OF_TILE/2, y + SIZE_OF_TILE/2, colour, 0);
 	// Draw healthbar
 	alt_up_pixel_buffer_dma_draw_box(pixel_buffer, x + SIZE_OF_TILE/2 + 8, y, x + SIZE_OF_TILE/2 + 8 + HEALTHBAR_LEN,
 			y + SIZE_OF_TILE/2, 0xF822, 0);
@@ -255,17 +256,17 @@ alt_u32 alarm_blink_isr(void* context) {
 	for(character_id = 0; character_id < CHARS_PER_PLAYER; character_id++) {
 		if(Players[main_player_id]->characters[character_id].move == curr_move) {
 			alt_up_pixel_buffer_dma_draw_rectangle(pixel_buffer,
-					healthbar_pos[main_player_id][character_id][0] - 1,
-					healthbar_pos[main_player_id][character_id][1] - 1,
-					healthbar_pos[main_player_id][character_id][0] + SIZE_OF_TILE/2 + 1,
-					healthbar_pos[main_player_id][character_id][1] + SIZE_OF_TILE/2 + 1,
+					healthbar_pos[main_player_id][character_id][0] - SIZE_OF_TILE/2 - 1,
+					healthbar_pos[main_player_id][character_id][1] - SIZE_OF_TILE/2 + 1,
+					healthbar_pos[main_player_id][character_id][0] + SIZE_OF_TILE/2,
+					healthbar_pos[main_player_id][character_id][1] + SIZE_OF_TILE/2 + 3,
 					blinker, 0);
 		} else {
 			alt_up_pixel_buffer_dma_draw_rectangle(pixel_buffer,
-					healthbar_pos[main_player_id][character_id][0] - 1,
-					healthbar_pos[main_player_id][character_id][1] - 1,
-					healthbar_pos[main_player_id][character_id][0] + SIZE_OF_TILE/2 + 1,
-					healthbar_pos[main_player_id][character_id][1] + SIZE_OF_TILE/2 + 1,
+					healthbar_pos[main_player_id][character_id][0] - SIZE_OF_TILE/2 - 1,
+					healthbar_pos[main_player_id][character_id][1] - SIZE_OF_TILE/2 + 1,
+					healthbar_pos[main_player_id][character_id][0] + SIZE_OF_TILE/2,
+					healthbar_pos[main_player_id][character_id][1] + SIZE_OF_TILE/2 + 3,
 					0, 0);
 		}
 	}
@@ -306,7 +307,7 @@ void show_game(void) {
 			draw_sprite(x_coord, y_coord, map[x][y].type);
 		}
 	}
-	//randomize_map();
+	randomize_map();
 	initialize_blinker();
 
 }
@@ -338,7 +339,6 @@ void animate_to_tile(int ram_location, int dx, int dy, int old_x, int old_y, int
 }
 
 void animate(int ram_location, int old_x, int old_y, int new_x, int new_y) {
-	music_choose(MOVE);
 	int dist = 1;
 	int *path = (int *) calloc(map[new_x][new_y].distance, sizeof(int));
 	get_path(new_x, new_y, path);
@@ -431,15 +431,15 @@ void initialize_players() {
 			load_sprite_hardware(i, j, Players[i]->characters[j].standing, STANDING);
 			map[x][y].occupied_by = &Players[i]->characters[j];
 			draw_sprite(map[x][y].pos.x, map[x][y].pos.y, Players[i]->characters[j].standing);
-			draw_healthbar(healthbar_pos[i][j][0], healthbar_pos[i][j][1], Players[i]->characters[j].colour);
+			draw_healthbar(i, j, healthbar_pos[i][j][0], healthbar_pos[i][j][1]);
 		}
 	}
 }
 
 
 int tile_is_free(int player_id, int x, int y) {
-	if ((0 <= x) && (x < DIMENSION_OF_MAP_X ) && (0 <= y) && (y < DIMENSION_OF_MAP_Y) && (map[x][y].occupied_by == NULL) &&
-			(map[x][y].explored == 0) && (map[x][y].type == GRASS)) {
+	if ((0 <= x) && (x < DIMENSION_OF_MAP_X ) && (0 <= y) && (y < DIMENSION_OF_MAP_Y) &&
+			(map[x][y].occupied_by == NULL) && (map[x][y].explored == 0) && (map[x][y].type == GRASS)) {
 		return 1;
 	} else {
 		return 0;
@@ -447,8 +447,8 @@ int tile_is_free(int player_id, int x, int y) {
 }
 
 int tile_is_attackable(int player_id, int x, int y) {
-	if ((0 <= x) && (x < DIMENSION_OF_MAP_X) && (0 <= y) && (y < DIMENSION_OF_MAP_Y) && (map[x][y].occupied_by != NULL) &&
-			(map[x][y].explored == 0) && (map[x][y].occupied_by->team != player_id)) {
+	if ((0 <= x) && (x < DIMENSION_OF_MAP_X) && (0 <= y) && (y < DIMENSION_OF_MAP_Y) &&
+			(map[x][y].explored == 0) && ((map[x][y].occupied_by->team != player_id) || (map[x][y].occupied_by == NULL))) {
 		return 1;
 	} else {
 		return 0;
@@ -477,18 +477,19 @@ void randomize_map(void) {
 	dfs_map(0, 0, src_x, src_y, size, valid_moves, tile_is_free);
 	for (i = 0; valid_moves[i] != 0; i++) {
 		valid_moves[i]->type = WATER;
-		valid_moves[i]->type = 10000;
+		valid_moves[i]->distance = 10000;
 		valid_moves[i]->explored = 0;
 		draw_sprite(valid_moves[i]->pos.x, valid_moves[i]->pos.y, WATER);
 	}
 
 	// Randomly disperse rocks throughout game
-	/*size = (rand() % 10) + 5;
+	size = (rand() % 10) + 10;
 	for (i = 0; i < size; i++) {
-		src_x = rand() % DIMENSION_OF_MAP_X;
+		src_x = rand() % (DIMENSION_OF_MAP_X - 4);
 		src_y = rand() % DIMENSION_OF_MAP_Y;
-		valid_moves[i]->type = ROCK;
-	}*/
+		map[src_x + 2][src_y].type = ROCK;
+		draw_sprite(map[src_x + 3][src_y].pos.x, map[src_x + 3][src_y].pos.y, ROCK);
+	}
 	free(valid_moves);
 }
 
@@ -526,14 +527,12 @@ void update_healthbar(int player_id, int character_id) {
 
 void character_is_dead(int player_id, int character_id) {
 	// Remove character from map
-	music_choose(UNIT_DIE);
 	move_player(player_id, character_id, Players[player_id]->characters[character_id].pos.x,
 			Players[player_id]->characters[character_id].pos.y, -1, -1);
 	Players[player_id]->characters_remaining--;
 }
 
 void attack_player(int player_id, int character_id, int x, int y) {
-	music_choose(Players[player_id]->characters[character_id].class);
 	if(((x == Players[player_id]->characters[character_id].pos.x) &&
 			(y == Players[player_id]->characters[character_id].pos.y)) || map[x][y].occupied_by == NULL) {
 		// If selecting self, it means player chose not to attack
@@ -637,7 +636,7 @@ void do_attack(int player_id, int character_id) {
 int select_character(int player_id) {
 	int sel_x = 0, sel_y = 0;
 	int character_id = 0, old_character_id;
-	character_option curr_move = Players[0]->characters[0].move;
+	character_option curr_move = find_player_move(player_id);//Players[0]->characters[0].move;
 	keypress move = get_player_input(0);
 
 	while(1) {
