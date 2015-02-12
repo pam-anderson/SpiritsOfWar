@@ -25,7 +25,7 @@ static alt_up_audio_dev *audio;
  *@brief Music Choose chooses which event sound to play.
  *@param a The array value for the desired audio event.
  */
-void music_choose(int a)
+void music_choose(sound_fx a)
 {
 	if(a >= 0 && a < NumEvents)
 		trigger =  a;
