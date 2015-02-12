@@ -36,7 +36,7 @@ void music_choose(int a)
 void music_go(){
 	music_init();
 	audio_init();
-	music_load("mus.wav");
+	music_load("MUS.WAV");
 	music_load("war.wav");
 	music_load("arch.wav");
 	music_load("mag.wav");
@@ -49,11 +49,11 @@ void music_go(){
  *@brief Muisc Load opens the music file, Reads the Meta-Data and Loads the music to RAM
  *@param File The filename of the file to be loaded.
  */
-void music_load(char * File){
+void music_load(char * file){
 	file_select = NULL;
-	file_select = malloc(sizeof(File));
-	strcpy(file_select, File);
-	music_open(File);
+	file_select = malloc(sizeof(file));
+	strcpy(file_select, file);
+	music_open(file);
 	music_file_size();
 	music_file_load();
 }
@@ -171,7 +171,8 @@ void music_file_size(void){
 		size[i] = size[4-i-1];
 		size[4-i-1] = temp;
 	}
-	if(strcmp(file_select,"mus.wav") == 0)	{
+	if(strcmp(file_select,"MUS.WAV") == 0)	{
+//	if(file_select == "MUS.WAV")	{
 		wav_size = (size[0] << 3*BYTE | size[1] << 2*BYTE | size[2] << BYTE | size[3]) + BYTE;
 		printf("The Size of %s is %i\n", file_select, wav_size);
 		fflush(stdout);
@@ -265,12 +266,12 @@ void music_file_load(void){
 	int i,j,l;
 	short k;
 	unsigned int audio_data[2];
-	if(file_select == "mus.wav")
+	if(strcmp(file_select,"MUS.WAV") == 0)
 		music_data_count = 0;
 
 	music_buff = (unsigned int *) malloc (110 * sizeof(unsigned int));
 
-	if(strcmp(file_select, "mus.wav") != 0)
+	if(strcmp(file_select, "MUS.WAV") != 0)
 	{
 		for(l = 0; l < NumEvents; l++)
 		{
@@ -291,7 +292,7 @@ void music_file_load(void){
 			Events[l].music_data_count++;
 		}
 
-		printf("Music Data Count is now at %i, Size is %i \n", Events[0].music_data_count, Events[0].size);
+		printf("Music Data Count is now at %i, Size is %i \n", Events[l].music_data_count, Events[l].size);
 		fflush(stdout);
 
 
