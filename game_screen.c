@@ -621,9 +621,9 @@ void do_movement(int player_id, int character_id) {
 	for(i = 0; valid_moves[i] != 0; i++) {
 		map[valid_moves[i]->coords.x][valid_moves[i]->coords.y].type |= 0x100;
 		draw_sprite(map[valid_moves[i]->coords.x][valid_moves[i]->coords.y].pos.x, map[valid_moves[i]->coords.x][valid_moves[i]->coords.y].pos.y, map[valid_moves[i]->coords.x][valid_moves[i]->coords.y].type);
-		draw_characters();
 	}
-	
+	draw_characters();
+
 	if (select_space(valid_moves, &new_x, &new_y)) {
 		move_player(player_id, character_id, old_x, old_y, new_x, new_y);
 		Players[player_id]->characters[character_id].move = ATTACK;
@@ -632,10 +632,10 @@ void do_movement(int player_id, int character_id) {
 	for(i = 0; valid_moves[i] != 0; i++) {
 		map[valid_moves[i]->coords.x][valid_moves[i]->coords.y].type &= 0x0FF;
 		draw_sprite(map[valid_moves[i]->coords.x][valid_moves[i]->coords.y].pos.x, map[valid_moves[i]->coords.x][valid_moves[i]->coords.y].pos.y, map[valid_moves[i]->coords.x][valid_moves[i]->coords.y].type);
-		draw_characters();
 		valid_moves[i]->explored = 0;
 		valid_moves[i]->distance = 10000;
 	}
+	draw_characters();
 	free(valid_moves);
 }
 
@@ -653,6 +653,7 @@ void do_attack(int player_id, int character_id) {
 		map[valid_attacks[i]->coords.x][valid_attacks[i]->coords.y].type |= 0x200;
 		draw_sprite(map[valid_attacks[i]->coords.x][valid_attacks[i]->coords.y].pos.x, map[valid_attacks[i]->coords.x][valid_attacks[i]->coords.y].pos.y, map[valid_attacks[i]->coords.x][valid_attacks[i]->coords.y].type);
 	}
+	draw_characters();
 	if (select_space(valid_attacks, &new_x, &new_y)) {
 		attack_player(player_id, character_id, new_x, new_y);
 		Players[player_id]->characters[character_id].move = DONE;
@@ -664,6 +665,7 @@ void do_attack(int player_id, int character_id) {
 		valid_attacks[i]->explored = 0;
 		valid_attacks[i]->distance = 10000;
 	}
+	draw_characters();
 	free(valid_attacks);
 }
 
