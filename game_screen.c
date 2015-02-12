@@ -1,22 +1,19 @@
 #include "SoW.h"
 #include "Sow_game_screen.h"
 
-game_tile map[DIMENSION_OF_MAP_X][DIMENSION_OF_MAP_Y];
-player Players[NO_PLAYERS];
-int colours[NO_PLAYERS][CHARS_PER_PLAYER] = {{0xF808, 0x7E0, 0x1F,},{ 0xE700, 0xE70, 0xE7 }};
-/* Start grids of characters */
-int start_pos[NO_PLAYERS][CHARS_PER_PLAYER][2] = {{{0, DIMENSION_OF_MAP_Y - 2}, {0, DIMENSION_OF_MAP_Y - 1},
-		{1, DIMENSION_OF_MAP_Y - 1}}, {{DIMENSION_OF_MAP_X - 2, 0}, {DIMENSION_OF_MAP_X - 1, 0},
-		{DIMENSION_OF_MAP_X - 1, 1}}};
-/* Coordinates of top left corner of health bar */
-int healthbar_pos[NO_PLAYERS][CHARS_PER_PLAYER][2] = {{{29, 15}, {123, 15}, {217, 15}}, {{29, 214}, {123, 214}, {217, 214}}};
-class_defaults classes[NUM_OF_CLASSES] = {
-		{WARRIOR, WARRIOR_HP, WARRIOR_ATTACK, WARRIOR_DEFENSE, WARRIOR_RANGE, WARRIOR_MOVEMENT},
-		{RANGER, RANGER_HP, RANGER_ATTACK, RANGER_DEFENSE, RANGER_RANGE, RANGER_MOVEMENT},
-		{MAGE, MAGE_HP, MAGE_ATTACK, MAGE_DEFENSE, MAGE_RANGE, MAGE_MOVEMENT} };
-
-
-void dfs_map(int player_id, int character_id, int x, int y, int levels,game_tile** valid_moves, int (*f)(int, int, int)) {
+/*
+ * @brief Perform a depth first search to a defined amount of levels on the map, starting at
+ *        a specific tile. Return a list of all valid, explored tiles.
+ * @param player_id Player id
+ * @param character_id Character id
+ * @param x Map coordinate in the x axis
+ * @param y Map coordinate in the y axis
+ * @param levels The number of levels to explore in the search
+ * @param valid_moves An empty list where the explored tiles will be store
+ * @param is_valid A function which takes the current tile and determines if it is valid
+ */
+void dfs_map(int player_id, int character_id, int x, int y, int levels,game_tile** valid_moves,
+		int (*is_valid)(int, int, int)) {
 	int level;
 	int i;
 	int j = 0;
@@ -40,7 +37,7 @@ void dfs_map(int player_id, int character_id, int x, int y, int levels,game_tile
 			// Check every neighbour of current tile to see if it would be a valid move
 			for(dir = 0; dir < 4; dir++) {
 				if(dir == 0) { // LEFT
-					if ((*f)(player_id, curr[i]->coords.x - 1, curr[i]->coords.y) == TRUE) {
+					if ((*is_valid)(player_id, curr[i]->coords.x - 1, curr[i]->coords.y) == TRUE) {
 						map[curr[i]->coords.x - 1][curr[i]->coords.y].explored = 1;
 						neighbour[j] = &map[curr[i]->coords.x - 1][curr[i]->coords.y];
 						valid_moves[k] = neighbour[j];
@@ -49,7 +46,7 @@ void dfs_map(int player_id, int character_id, int x, int y, int levels,game_tile
 						j++;
 					}
 				} else if(dir == 1) {// RIGHTS
-					if ((*f)(player_id, curr[i]->coords.x + 1, curr[i]->coords.y) == TRUE) {
+					if ((*is_valid)(player_id, curr[i]->coords.x + 1, curr[i]->coords.y) == TRUE) {
 						map[curr[i]->coords.x + 1][curr[i]->coords.y].explored = 1;
 						neighbour[j] = &map[curr[i]->coords.x + 1][curr[i]->coords.y];
 						valid_moves[k] = neighbour[j];
@@ -58,7 +55,7 @@ void dfs_map(int player_id, int character_id, int x, int y, int levels,game_tile
 						j++;
 					}
 				} else if(dir == 2) { //UP
-					if ((*f)(player_id, curr[i]->coords.x, curr[i]->coords.y - 1) == TRUE) {
+					if ((*is_valid)(player_id, curr[i]->coords.x, curr[i]->coords.y - 1) == TRUE) {
 						map[curr[i]->coords.x][curr[i]->coords.y - 1].explored = 1;
 						neighbour[j] = &map[curr[i]->coords.x][curr[i]->coords.y - 1];
 						valid_moves[k] = neighbour[j];
@@ -67,7 +64,7 @@ void dfs_map(int player_id, int character_id, int x, int y, int levels,game_tile
 						j++;
 					}
 				} else { //DOWN
-					if ((*f)(player_id, curr[i]->coords.x, curr[i]->coords.y + 1) == TRUE) {
+					if ((*is_valid)(player_id, curr[i]->coords.x, curr[i]->coords.y + 1) == TRUE) {
 						map[curr[i]->coords.x][curr[i]->coords.y + 1].explored = 1;
 						neighbour[j] = &map[curr[i]->coords.x][curr[i]->coords.y + 1];
 						valid_moves[k] = neighbour[j];
@@ -87,31 +84,14 @@ void dfs_map(int player_id, int character_id, int x, int y, int levels,game_tile
 	free(curr);
 }
 
-keypress get_player_input(int type) {
-	if(type == SERIAL) {
-		while(1) {
-			while(alt_up_rs232_read_data(serial_port, SERIAL_DATA_LOC, SERIAL_PAR_LOC) == -1){
-				// Wait for character to come in
-			}
-			if (*SERIAL_DATA_LOC == 'w') {
-				return UP;
-			} else if (*SERIAL_DATA_LOC == 's') {
-				return DOWN;
-			} else if (*SERIAL_DATA_LOC == 'a') {
-				return LEFT;
-			} else if (*SERIAL_DATA_LOC == 'd') {
-				return RIGHT;
-			} else if (*SERIAL_DATA_LOC == ' ') {
-				return ENTER;
-			} else if (*SERIAL_DATA_LOC == 27) {
-				return ESC;
-			}
-		}
-	} else {
-		// get keyboard input
-	}
-}
-
+/*
+ * @brief Draw the initial health bar at a given position, as well as the character associated with
+ *        that health bar
+ * @param x The absolute position of the pixel in the x axis of the top left corner of the character
+ * 		  to be drawn beside the health bar.
+ * @param y The absolute position of the pixel in the y axis of the top left corner of the character
+ * 		  to be drawn beside the health bar.
+ */
 void draw_healthbar(int x, int y, int colour) {
 	// Draw character
 	alt_up_pixel_buffer_dma_draw_box(pixel_buffer, x, y, x + SIZE_OF_TILE/2, y + SIZE_OF_TILE/2, colour, 0);
@@ -122,6 +102,9 @@ void draw_healthbar(int x, int y, int colour) {
 				y + SIZE_OF_TILE/2, 0xFFFF, 0);
 }
 
+/*
+ * @brief Draw every alive character to the map
+ */
 void draw_characters() {
 	int i = 0, k = 0;
 	for(i = 0; i < NO_PLAYERS; i++) {
@@ -135,8 +118,12 @@ void draw_characters() {
 	}
 }
 
-
-
+/*
+ * @brief Draw a specific sprite to the screen using the pixel_drawer accelerator.
+ * @param x The absolute position of the pixel in the x axis of the top left corner of the sprite
+ * @param y The absolute position of the pixel in the y axis of the top left corner of the sprite
+ * @param type The sprite to draw
+ */
 void draw_sprite(int x, int y, sprite type) {
 	IOWR_32DIRECT(DRAWER_BASE, 0, x);
 	IOWR_32DIRECT(DRAWER_BASE, 4, y);
@@ -145,6 +132,9 @@ void draw_sprite(int x, int y, sprite type) {
 	while(IORD_32DIRECT(DRAWER_BASE, 24) == 0) {}
 }
 
+/*
+ * @brief Draw the entire map and the alive characters.
+ */
 void draw_map() {
 	int x = 0, y = 0;
 	for(y = 0; y < DIMENSION_OF_MAP_Y; y++) {
@@ -155,6 +145,13 @@ void draw_map() {
 	draw_characters();
 }
 
+/*
+ * @brief Move the selection cursor to a new position
+ * @param old_x The current x coordinate of the cursor
+ * @param old_y The current y coordinate of the cursor
+ * @param new_x The new x coordinate of the cursor
+ * @param new_y The new y coordinate of the cursor
+ */
 void draw_cursor(int old_x, int old_y, int new_x, int new_y, int colour) {
 	draw_sprite(map[old_x][old_y].pos.x, map[old_x][old_y].pos.y, map[old_x][old_y].type);
 	draw_sprite(map[new_x][new_y].pos.x, map[new_x][new_y].pos.y, map[new_x][new_y].type);
@@ -163,6 +160,11 @@ void draw_cursor(int old_x, int old_y, int new_x, int new_y, int colour) {
 			map[new_x][new_y].pos.x + SIZE_OF_TILE - 1, map[new_x][new_y].pos.y + SIZE_OF_TILE - 1, colour, 0);
 }
 
+/*
+ * @brief Draws exit prompt to screen
+ * @param player_id Player id
+ * @return 0 if player chose to exit, 1 if player did not choose to exit
+ */
 int draw_exit_screen(int player_id) {
 	// Use player id for input
 	keypress key;
@@ -179,6 +181,59 @@ int draw_exit_screen(int player_id) {
 			return 1;
 		}
 	}
+}
+
+/*
+ * @brief Find out what the current move is for a player
+ * @param player_id Player id
+ * @return The player's current move of type character_option
+ */
+character_option find_player_move(int player_id) {
+	int character_id;
+	character_option curr_move = DONE;
+	for(character_id = 0; character_id < CHARS_PER_PLAYER; character_id++) {
+		if(Players[player_id]->characters[character_id].move < curr_move) {
+			curr_move = Players[player_id]->characters[character_id].move;
+		}
+	}
+	return curr_move;
+}
+
+/*
+ * @brief ISR for the alarm. Executes every 0.25 seconds. Draws coloured box around
+ *        icons of characters that are able to take a turn.
+ */
+alt_u32 alarm_blink_isr(void* context) {
+	int character_id;
+	character_option curr_move = find_player_move(main_player_id);
+	blinker = ~blinker;
+	// TODO: Sometimes highlight stays after changing players
+	for(character_id = 0; character_id < CHARS_PER_PLAYER; character_id++) {
+		if(Players[main_player_id]->characters[character_id].move == curr_move) {
+			alt_up_pixel_buffer_dma_draw_rectangle(pixel_buffer,
+					healthbar_pos[main_player_id][character_id][0] - 1,
+					healthbar_pos[main_player_id][character_id][1] - 1,
+					healthbar_pos[main_player_id][character_id][0] + SIZE_OF_TILE/2 + 1,
+					healthbar_pos[main_player_id][character_id][1] + SIZE_OF_TILE/2 + 1,
+					blinker, 0);
+		} else {
+			alt_up_pixel_buffer_dma_draw_rectangle(pixel_buffer,
+					healthbar_pos[main_player_id][character_id][0] - 1,
+					healthbar_pos[main_player_id][character_id][1] - 1,
+					healthbar_pos[main_player_id][character_id][0] + SIZE_OF_TILE/2 + 1,
+					healthbar_pos[main_player_id][character_id][1] + SIZE_OF_TILE/2 + 1,
+					0, 0);
+		}
+	}
+	return alt_ticks_per_second() / 4;
+}
+
+/*
+ * @brief Initialize sysclk to interrupt every .25 seconds and set up ISR.
+ */
+void initialize_blinker() {
+	int ticks_per_interrupt = alt_ticks_per_second() / 4;
+	alt_alarm_start(&alarm, ticks_per_interrupt, alarm_blink_isr, NULL);
 }
 
 /*
@@ -207,21 +262,20 @@ void show_game(void) {
 			draw_sprite(x_coord, y_coord, map[x][y].type);
 		}
 	}
-	randomize_map();
+	//randomize_map();
+	initialize_blinker();
+
 }
 
-void init_timer() {
-	int timer_period = 1 * 50000000;
-	IOWR_16DIRECT(TIMER_BASE, 8, timer_period & 0xFFFF);
-	IOWR_16DIRECT(TIMER_BASE, 12, timer_period >> 16);
-	printf(" Stopping Timer\n");
-	int status = IORD_16DIRECT(TIMER_BASE, 0);
-	if (status & 0x2) {
-	IOWR_16DIRECT(TIMER_BASE, 4, 1 << 3);
-	}
-}
-
+/*
+ * @brief Move character sprite to a new tile, erasing and redrawing at a rate of 32 fps.
+ * @param dx Distance to move character in x axis for every redraw
+ * @param dy Distance to move character in x axis for every redraw
+ * @param old_x Previous coordinate of character on map in x axis
+ * @param old_y Previous coordinate of character on map in y axis
+ */
 void animate_to_tile(int colour, int dx, int dy, int old_x, int old_y, int new_x, int new_y) {
+	printf("animate to tile\n");
 	int i = 0;
 	int ticks_per_mvmnt = alt_timestamp_freq() / 32;
 
@@ -238,10 +292,12 @@ void animate_to_tile(int colour, int dx, int dy, int old_x, int old_y, int new_x
 }
 
 void animate(int colour, int old_x, int old_y, int new_x, int new_y) {
+	printf("animate old: %d %d new: %d %d \n", old_x, old_y, new_x, new_y);
 	int dist = 1;
 	int *path = (int *) calloc(map[new_x][new_y].distance, sizeof(int));
 	get_path(new_x, new_y, path);
 	while(dist <= map[new_x][new_y].distance) {
+		printf("dist:%d path:%d \n", dist, path[dist]);
 		if(path[dist] == 0) {
 			animate_to_tile(colour, 1, 0, old_x, old_y, new_x, new_y);
 			old_x++;
@@ -261,11 +317,14 @@ void animate(int colour, int old_x, int old_y, int new_x, int new_y) {
 		dist++;
 	}
 	free(path);
+	printf("end animate\n");
 }
 
 void get_path(int new_x, int new_y, int *path) {
+	printf("get_path\n");
 	int i = map[new_x][new_y].distance;
 	while(map[new_x][new_y].distance != 0) {
+		printf("x:%d y:%d i:%d   ", new_x, new_y, i);
 		if(new_x > 0 && map[new_x][new_y].distance > map[new_x - 1][new_y].distance) {
 			new_x--;
 			path[i] = 0;
@@ -284,11 +343,13 @@ void get_path(int new_x, int new_y, int *path) {
 		}
 		i--;
 	}
+	printf("end get path\n");
 }
 
 void move_player(int player_id, int char_id, int old_x, int old_y, int new_x, int new_y) {
+	printf("move player\n");
 	map[old_x][old_y].occupied_by = NULL;
-	if((new_x == -1) || (new_y == -1) || (new_x == DIMENSION_OF_MAP_X) || (new_y == DIMENSION_OF_MAP_Y)) {
+	if((new_x <= -1) || (new_y <= -1) || (new_x >= DIMENSION_OF_MAP_X) || (new_y >= DIMENSION_OF_MAP_Y)) {
 		return;
 	}
 	animate(Players[player_id]->characters[char_id].colour, old_x, old_y, new_x, new_y);
@@ -338,7 +399,7 @@ void initialize_players() {
 
 int tile_is_free(int player_id, int x, int y) {
 	if ((0 <= x) && (x < DIMENSION_OF_MAP_X ) && (0 <= y) && (y < DIMENSION_OF_MAP_Y) && (map[x][y].occupied_by == NULL) &&
-			(map[x][y].explored == 0)) {
+			(map[x][y].explored == 0) && (map[x][y].type == GRASS)) {
 		return 1;
 	} else {
 		return 0;
@@ -408,9 +469,10 @@ void update_healthbar(int player_id, int character_id) {
 	alt_up_pixel_buffer_dma_draw_box(pixel_buffer,
 			healthbar_pos[player_id][character_id][0] + SIZE_OF_TILE/2 + 8,
 			healthbar_pos[player_id][character_id][1] + 1,
+
 			healthbar_pos[player_id][character_id][0] + SIZE_OF_TILE/2 + 8 + HEALTHBAR_LEN,
 			healthbar_pos[player_id][character_id][1] + SIZE_OF_TILE/2 - 1, 0x0, 0);
-	if(pixel_health == 0) {
+	if(pixel_health <= 0) {
 		return;
 	}
 	alt_up_pixel_buffer_dma_draw_box(pixel_buffer,
@@ -434,14 +496,14 @@ void attack_player(int player_id, int character_id, int x, int y) {
 		return;
 	}
 	map[x][y].occupied_by->hp -= Players[player_id]->characters[character_id].atk;
-	if(map[x][y].occupied_by->hp <= 0) {
-		// Cannot have negative health
-		map[x][y].occupied_by->hp = 0;
-		character_is_dead(map[x][y].occupied_by->team, map[x][y].occupied_by->id);
-	}
+	update_healthbar(map[x][y].occupied_by->team, map[x][y].occupied_by->id);
 	printf("Player %d character %d attacked player %d and caused %d damage.\n",
 			player_id, character_id, map[x][y].occupied_by->team, Players[player_id]->characters[character_id].atk);
-	update_healthbar(map[x][y].occupied_by->team, map[x][y].occupied_by->id);
+	if(map[x][y].occupied_by->hp <= 0) {
+			// Cannot have negative health
+			map[x][y].occupied_by->hp = 0;
+			character_is_dead(map[x][y].occupied_by->team, map[x][y].occupied_by->id);
+	}
 }
 
 void move_cursor(keypress move, int *sel_x, int *sel_y) {
@@ -475,6 +537,7 @@ int select_space(game_tile **valid_moves, int *sel_x, int *sel_y) {
 }
 
 void do_movement(int player_id, int character_id) {
+	printf("do movement\n");
 	int i;
 	int old_x = Players[player_id]->characters[character_id].pos.x;
 	int old_y = Players[player_id]->characters[character_id].pos.y;
@@ -530,6 +593,7 @@ void do_attack(int player_id, int character_id) {
 int select_character(int player_id) {
 	int sel_x = 0, sel_y = 0;
 	int character_id = 0, old_character_id;
+	character_option curr_move = Players[0]->characters[0].move;
 	keypress move = get_player_input(SERIAL);
 
 	while(1) {
@@ -547,6 +611,14 @@ int select_character(int player_id) {
 			if (!draw_exit_screen(player_id)) {
 				return 0;
 			}
+		} else if (move == NEXT) {
+			for (character_id = 0; character_id < CHARS_PER_PLAYER; character_id++) {
+				if ((Players[player_id]->characters[character_id].move == curr_move) &&
+						(Players[player_id]->characters[character_id].move != DONE)) {
+					Players[player_id]->characters[character_id].move++;
+				}
+			}
+			return 1;
 		} else if (move == LEFT) {
 			old_character_id = character_id;
 			do {
@@ -557,9 +629,9 @@ int select_character(int player_id) {
 				}
 			} while(Players[player_id]->characters[character_id].hp == 0);
 			draw_cursor(Players[player_id]->characters[old_character_id].pos.x,
-					Players[player_id]->characters[old_character_id].pos.y,
-					Players[player_id]->characters[character_id].pos.x,
-					Players[player_id]->characters[character_id].pos.y, 0xF81F);
+						Players[player_id]->characters[old_character_id].pos.y,
+						Players[player_id]->characters[character_id].pos.x,
+						Players[player_id]->characters[character_id].pos.y, 0xF81F);
 			sel_x = Players[player_id]->characters[character_id].pos.x;
 			sel_y = Players[player_id]->characters[character_id].pos.y;
 		} else if (move == RIGHT) {
@@ -572,9 +644,9 @@ int select_character(int player_id) {
 				}
 			} while(Players[player_id]->characters[character_id].hp == 0);
 			draw_cursor(Players[player_id]->characters[old_character_id].pos.x,
-					Players[player_id]->characters[old_character_id].pos.y,
-					Players[player_id]->characters[character_id].pos.x,
-					Players[player_id]->characters[character_id].pos.y, 0xF81F);
+						Players[player_id]->characters[old_character_id].pos.y,
+						Players[player_id]->characters[character_id].pos.x,
+						Players[player_id]->characters[character_id].pos.y, 0xF81F);
 			sel_x = Players[player_id]->characters[character_id].pos.x;
 			sel_y = Players[player_id]->characters[character_id].pos.y;
 		}
@@ -582,15 +654,17 @@ int select_character(int player_id) {
 	}
 }
 
+/*
+ * @param player_id
+ * @returns 1 if players turn is not done, 0 if players turn is done
+ */
 int is_turn_done(int player_id) {
 	int i = 0;
-
 		for(i = 0; i < CHARS_PER_PLAYER; i++) {
 			if(Players[player_id]->characters[i].move != DONE && Players[player_id]->characters[i].hp > 0) {
 				return 1;
 			}
 		}
-
 		return 0;
 }
 
@@ -602,7 +676,6 @@ void reset_turn(int player_id) {
 }
 
 void play_game() {
-	int player_id = 0;
 	int i = 0;
 	int j =0;
 
@@ -610,19 +683,19 @@ void play_game() {
 	initialize_players();
 
 	 while(1){
-		 while(is_turn_done(player_id)) {
-			 if (Players[player_id]->characters_remaining == 0) {
-				 printf("Game over. Player %d lost!\n", player_id);
+		 while(is_turn_done(main_player_id)) {
+			 if (Players[main_player_id]->characters_remaining == 0) {
+				 printf("Game over. Player %d lost!\n", main_player_id);
+				 alt_alarm_stop(&alarm);
 				 return;
-			 } else {
-				 if (!select_character(player_id)) {
-					 return;
-				 }
+			 } else if (!select_character(main_player_id)) {
+				 alt_alarm_stop(&alarm);
+				 return;
 			 }
 		 }
-		 reset_turn(player_id);
-		 player_id = !player_id;
-
+		 reset_turn(main_player_id);
+		 main_player_id = !main_player_id;
 	}
+	alt_alarm_stop(&alarm);
 	return;
 }

@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include "io.h"
 #include "sys/alt_timestamp.h"
+#include "sys/alt_alarm.h"
 #include "Altera_UP_SD_Card_Avalon_Interface.h"
 
 /* Defines */
@@ -37,6 +38,7 @@
 #define SERIAL_BASE (volatile int *) 0x4070
 #define KEY_BASE 0x4078
 #define TIMER_BASE 0x4000
+#define GPIO_BASE 0x4440
 
 /* Music Event Trigger Struct Move Later? */
 struct Event {
@@ -51,12 +53,18 @@ struct Event {
 #define NumEvents 3
 struct Event Events[NumEvents];
 
-char *KeyInput;
+typedef enum {
+	UP,
+	DOWN,
+	LEFT,
+	RIGHT,
+	ENTER,
+	ESC,
+	NEXT
+} keypress;
 
 /* Functions defined by startup code */
 void keyboard_init(void);
-char* keyboard_read(void);
-void keyboard_enable_ISR(void);
 
 void audio_init(void);
 void audio_play(void);
@@ -78,9 +86,9 @@ void sdcard_init() ;
 int sdcard_write_file(char* file_name, alt_u8* buffer, int size) ;
 int sdcard_read_file(char* file_name, alt_u8* buffer, int size);
 
-alt_up_rs232_dev *serial_port;
 alt_up_char_buffer_dev *char_buffer;
 alt_up_pixel_buffer_dma_dev* pixel_buffer;
+static alt_alarm alarm;
 
 
 void music_load(char * File);
@@ -94,4 +102,5 @@ void music_file_load(void);
 void music_GO(void);
 
 void play_game(void);
+keypress get_player_input(int);
 
