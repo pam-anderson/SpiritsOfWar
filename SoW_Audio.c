@@ -37,8 +37,11 @@ void music_go(){
 	music_init();
 	audio_init();
 	music_load("ee3.wav");
-	music_load("fx.wav");
-	music_load("fx2.wav");
+	music_load("war.wav");
+	music_load("arch.wav");
+	music_load("mag.wav");
+	music_load("mov.wav");
+	music_load("die.wav");
 	music_enable_ISR();
 }
 
