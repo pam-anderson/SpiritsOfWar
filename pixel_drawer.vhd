@@ -32,12 +32,9 @@ architecture rtl of pixel_drawer is
 	 type tile is array(255 downto 0) of std_logic_vector(15 downto 0);
 	 type mem is array(39 downto 0) of tile;
 	 signal memory: mem;
-	 signal ram_wr: std_logic;
+	 signal ram_wr: std_logic := '0';
 	 signal ram_address: std_logic_vector(15 downto 0);
 	 signal ram_data: std_logic_vector(15 downto 0);
---	 signal ram_rd: std_logic;
---	 signal ram_out: std_logic_vector(15 downto 0);
---	 constant pixel_buffer_base : std_logic_vector(31 downto 0) :=  x"00080000";
 	 
 begin
 
@@ -65,7 +62,6 @@ begin
 
     -- This is used to remember the left-most x point as we draw the box.
     variable savedx : std_logic_vector(8 downto 0);
-	 variable savedy : std_logic_vector(7 downto 0);
 	 	 
 	 
     begin
@@ -92,8 +88,6 @@ begin
                -- write operation is the colour value (16 bits).
 
                if state = 0 then						  
-					 --elsif state = 3 then 
-					  master_addr <= std_logic_vector(unsigned(pixel_buffer_base) + unsigned( y1_local & x1_local & '0'));
 					  ram_address <= std_logic_vector(unsigned(tile_type(7 downto 0))) & std_logic_vector(to_unsigned(count, 8));
 					  state := 1;
 						
@@ -114,7 +108,7 @@ begin
 									count := count + 1;
 								end if;
 							else 
-                        x1_local := std_logic_vector(unsigned(x1_local)+1);
+                       x1_local := std_logic_vector(unsigned(x1_local)+1);
 								count := count + 1;
 							end if;
 						else
@@ -123,6 +117,7 @@ begin
 								when "10" => colour_local:= colour_local OR x"F800";
 								when others => null;
 							end case;
+							master_addr <= std_logic_vector(unsigned(pixel_buffer_base) + unsigned( y1_local & x1_local & '0'));
 							master_writedata <= colour_local;
 							master_be <= "11";  -- byte enable
 							master_wr_en <= '1';
@@ -160,9 +155,10 @@ begin
 					count := count + 1;
 					done <= '1';
 				end if;
+				
 					
              if (slave_wr_en = '1') then
-					if(count >= 256) then
+					if(count > 255) then
 						count := 0;
 					end if;
                 case slave_addr is
@@ -206,20 +202,11 @@ begin
                              x1_local := x1;
                              savedx := x1;
                              x2_local := x2;
-                          else
-                             x2_local := x1;
-                             savedx := x2;
-                             x1_local := x2;
                           end if;
 								
                           if (y1 < y2) then
                              y1_local := y1;
-									  savedy := y1;
                              y2_local := y2;
-                          else
-                             y2_local := y1;
-									  savedy := y2;
-                             y1_local := y2;
                           end if;									
                         end if;
 								colour_local := x"FFFF";
