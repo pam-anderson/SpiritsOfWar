@@ -78,13 +78,14 @@ void show_instructions(void);
 void show_menu(void);
 void show_game(void);
 void animate(int, int, int, int, int);
-void animate_to_tile(int, int, int, int, int, int, int);
+void animate_to_tile(int, int, int, int, int, int, int, int);
 void get_path(int, int, int*);
 void init_timer(void);
 
 void sdcard_init() ;
 int sdcard_write_file(char* file_name, alt_u8* buffer, int size) ;
 int sdcard_read_file(char* file_name, alt_u8* buffer, int size);
+void load_sprite(char *, int *);
 
 alt_up_char_buffer_dev *char_buffer;
 alt_up_pixel_buffer_dma_dev* pixel_buffer;

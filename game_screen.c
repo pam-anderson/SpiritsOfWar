@@ -12,6 +12,52 @@
  * @param valid_moves An empty list where the explored tiles will be store
  * @param is_valid A function which takes the current tile and determines if it is valid
  */
+ 
+ void hardware_init() {
+	int i = 0, j = 0;
+	for(i = GRASS; i <= 2; i++) {
+		IOWR_32DIRECT(DRAWER_BASE, 8, i);
+		for(j = 0; j < 16 * 16; j++) {
+			switch(i) {
+				case GRASS: IOWR_32DIRECT(DRAWER_BASE, 16, grass[j]);
+						break;
+				case WATER: IOWR_32DIRECT(DRAWER_BASE, 16, water[j]);
+						break;
+				case ROCK: IOWR_32DIRECT(DRAWER_BASE, 16, rock[j]);
+						break;
+			}
+			while(IORD_32DIRECT(DRAWER_BASE, 24) == 0) {};
+		}
+	}
+}
+
+void load_sprite_hardware(int player_id, int character_id, int ram_location, int type) {
+	int j = 0;
+	IOWR_32DIRECT(DRAWER_BASE, 8, ram_location);
+	for(j = 0; j < 16 * 16; j++) {
+		IOWR_32DIRECT(DRAWER_BASE, 16, Players[player_id]->characters[character_id].sprites[type][j]);
+		while(IORD_32DIRECT(DRAWER_BASE, 24) == 0) {};
+	}
+}
+
+void sprite_init(int player_id, int character_id) {
+	int i = 0;
+	Players[player_id]->characters[character_id].sprites = (int **) calloc(9, sizeof(int *));
+	for(i = 0; i < SPRITES_PER_CHAR; i++) {
+		Players[player_id]->characters[character_id].sprites[i] = (int *) calloc(256, sizeof(int));
+		load_sprite(filenames[player_id * CHARS_PER_PLAYER + character_id][i], Players[player_id]->characters[character_id].sprites[i]);
+	}
+}
+
+void load_turn(int player_id) {
+	int i = 0, j = 0;
+	for(i = 0; i < CHARS_PER_PLAYER; i++) {
+		for(j = 1; j < SPRITES_PER_CHAR; j++) {
+			load_sprite_hardware(player_id, i, i * (SPRITES_PER_CHAR - 1) + ANIMATION_HARDWARE + (j - 1), j);
+		}
+	}
+}
+ 
 void dfs_map(int player_id, int character_id, int x, int y, int levels,game_tile** valid_moves,
 		int (*is_valid)(int, int, int)) {
 	int level;
@@ -85,6 +131,20 @@ void dfs_map(int player_id, int character_id, int x, int y, int levels,game_tile
 }
 
 /*
+ * @brief Draw a specific sprite to the screen using the pixel_drawer accelerator.
+ * @param x The absolute position of the pixel in the x axis of the top left corner of the sprite
+ * @param y The absolute position of the pixel in the y axis of the top left corner of the sprite
+ * @param type The sprite to draw
+ */
+void draw_sprite(int x, int y, sprite type) {
+	IOWR_32DIRECT(DRAWER_BASE, 0, x);
+	IOWR_32DIRECT(DRAWER_BASE, 4, y);
+	IOWR_32DIRECT(DRAWER_BASE, 8, type);
+	IOWR_32DIRECT(DRAWER_BASE, 12, 1); //Start
+	while(IORD_32DIRECT(DRAWER_BASE, 24) == 0) {}
+}
+
+/*
  * @brief Draw the initial health bar at a given position, as well as the character associated with
  *        that health bar
  * @param x The absolute position of the pixel in the x axis of the top left corner of the character
@@ -110,26 +170,10 @@ void draw_characters() {
 	for(i = 0; i < NO_PLAYERS; i++) {
 		for(k = 0; k < CHARS_PER_PLAYER; k++) {
 			if(Players[i]->characters[k].hp > 0) {
-				alt_up_pixel_buffer_dma_draw_box(pixel_buffer, map[Players[i]->characters[k].pos.x][Players[i]->characters[k].pos.y].pos.x, map[Players[i]->characters[k].pos.x][Players[i]->characters[k].pos.y].pos.y,
-						map[Players[i]->characters[k].pos.x][Players[i]->characters[k].pos.y].pos.x + SIZE_OF_TILE - 1, map[Players[i]->characters[k].pos.x][Players[i]->characters[k].pos.y].pos.y + SIZE_OF_TILE - 1,
-							Players[i]->characters[k].colour, 0);
+				draw_sprite(map[Players[i]->characters[k].pos.x][Players[i]->characters[k].pos.y].pos.x, map[Players[i]->characters[k].pos.x][Players[i]->characters[k].pos.y].pos.y, Players[i]->characters[k].standing);
 			}
 		}
 	}
-}
-
-/*
- * @brief Draw a specific sprite to the screen using the pixel_drawer accelerator.
- * @param x The absolute position of the pixel in the x axis of the top left corner of the sprite
- * @param y The absolute position of the pixel in the y axis of the top left corner of the sprite
- * @param type The sprite to draw
- */
-void draw_sprite(int x, int y, sprite type) {
-	IOWR_32DIRECT(DRAWER_BASE, 0, x);
-	IOWR_32DIRECT(DRAWER_BASE, 4, y);
-	IOWR_32DIRECT(DRAWER_BASE, 8, type);
-	IOWR_32DIRECT(DRAWER_BASE, 12, 1); //Start
-	while(IORD_32DIRECT(DRAWER_BASE, 24) == 0) {}
 }
 
 /*
@@ -274,50 +318,49 @@ void show_game(void) {
  * @param old_x Previous coordinate of character on map in x axis
  * @param old_y Previous coordinate of character on map in y axis
  */
-void animate_to_tile(int colour, int dx, int dy, int old_x, int old_y, int new_x, int new_y) {
-	printf("animate to tile\n");
+void animate_to_tile(int ram_location, int dx, int dy, int old_x, int old_y, int new_x, int new_y, int type) {
 	int i = 0;
 	int ticks_per_mvmnt = alt_timestamp_freq() / 32;
 
 	for(i = 0; i < 16; i++) {
+		alt_timestamp_start();
 		draw_sprite(map[old_x][old_y].pos.x, map[old_x][old_y].pos.y, map[old_x][old_y].type);
 		draw_sprite(map[new_x][new_y].pos.x, map[new_x][new_y].pos.y, map[new_x][new_y].type);
-		alt_up_pixel_buffer_dma_draw_box(pixel_buffer, map[old_x][old_y].pos.x + i * dx, map[old_x][old_y].pos.y + i * dy,
-				map[old_x][old_y].pos.x + SIZE_OF_TILE - 1 + i * dx, map[old_x][old_y].pos.y + SIZE_OF_TILE - 1 + i * dy,
-				colour, 0);
-
-		alt_timestamp_start();
+		if(i % 8 <= 3) {
+			draw_sprite(map[old_x][old_y].pos.x + i * dx, map[old_x][old_y].pos.y + i * dy, ram_location + type);
+		}
+		else {
+			draw_sprite(map[old_x][old_y].pos.x + i * dx, map[old_x][old_y].pos.y + i * dy, ram_location + type - 1);
+		}
 		while ((int)alt_timestamp() < ticks_per_mvmnt) {}
 	}
+	draw_sprite(map[old_x][old_y].pos.x, map[old_x][old_y].pos.y, map[old_x][old_y].type);
 }
 
-void animate(int colour, int old_x, int old_y, int new_x, int new_y) {
-	printf("animate old: %d %d new: %d %d \n", old_x, old_y, new_x, new_y);
+void animate(int ram_location, int old_x, int old_y, int new_x, int new_y) {
 	int dist = 1;
 	int *path = (int *) calloc(map[new_x][new_y].distance, sizeof(int));
 	get_path(new_x, new_y, path);
 	while(dist <= map[new_x][new_y].distance) {
-		printf("dist:%d path:%d \n", dist, path[dist]);
 		if(path[dist] == 0) {
-			animate_to_tile(colour, 1, 0, old_x, old_y, new_x, new_y);
+			animate_to_tile(ram_location, 1, 0, old_x, old_y, old_x + 1, old_y, RIGHT1);
 			old_x++;
 		}
 		else if(path[dist] == 1) {
-			animate_to_tile(colour, -1, 0, old_x, old_y, new_x, new_y);
+			animate_to_tile(ram_location, -1, 0, old_x, old_y, old_x - 1, old_y, LEFT1);
 			old_x--;
 		}
 		else if(path[dist] == 2) {
-			animate_to_tile(colour, 0, 1, old_x, old_y, new_x, new_y);
+			animate_to_tile(ram_location, 0, 1, old_x, old_y, old_x, old_y + 1, DOWN1);
 			old_y++;
 		}
 		else {
-			animate_to_tile(colour, 0, -1, old_x, old_y, new_x, new_y);
+			animate_to_tile(ram_location, 0, -1, old_x, old_y, old_x, old_y - 1, UP1);
 			old_y--;
 		}
 		dist++;
 	}
 	free(path);
-	printf("end animate\n");
 }
 
 void get_path(int new_x, int new_y, int *path) {
@@ -347,18 +390,14 @@ void get_path(int new_x, int new_y, int *path) {
 }
 
 void move_player(int player_id, int char_id, int old_x, int old_y, int new_x, int new_y) {
-	printf("move player\n");
 	map[old_x][old_y].occupied_by = NULL;
-	if((new_x <= -1) || (new_y <= -1) || (new_x >= DIMENSION_OF_MAP_X) || (new_y >= DIMENSION_OF_MAP_Y)) {
+	if((new_x == -1) || (new_y == -1) || (new_x == DIMENSION_OF_MAP_X) || (new_y == DIMENSION_OF_MAP_Y)) {
 		return;
 	}
-	animate(Players[player_id]->characters[char_id].colour, old_x, old_y, new_x, new_y);
+	animate(char_id * (SPRITES_PER_CHAR - 1) + ANIMATION_HARDWARE, old_x, old_y, new_x, new_y);
 	Players[player_id]->characters[char_id].pos.x = new_x;
 	Players[player_id]->characters[char_id].pos.y = new_y;
 	map[new_x][new_y].occupied_by = &Players[player_id]->characters[char_id];
-	alt_up_pixel_buffer_dma_draw_box(pixel_buffer, map[new_x][new_y].pos.x + 1, map[new_x][new_y].pos.y + 1,
-			map[new_x][new_y].pos.x + SIZE_OF_TILE - 1, map[new_x][new_y].pos.y + SIZE_OF_TILE - 1,
-			Players[player_id]->characters[char_id].colour, 0);
 }
 
 void initialize_players() {
@@ -383,14 +422,14 @@ void initialize_players() {
 			Players[i]->characters[j].pos.x = start_pos[i][j][0];
 			Players[i]->characters[j].pos.y = start_pos[i][j][1];
 			Players[i]->characters[j].move = MOVE;
+			Players[i]->characters[j].standing = i * CHARS_PER_PLAYER + NUM_SPRITE_TYPES + j;
 
 			x = Players[i]->characters[j].pos.x;
 			y = Players[i]->characters[j].pos.y;
-
+			sprite_init(i, j);
+			load_sprite_hardware(i, j, Players[i]->characters[j].standing, STANDING);
 			map[x][y].occupied_by = &Players[i]->characters[j];
-			alt_up_pixel_buffer_dma_draw_box(pixel_buffer, map[x][y].pos.x, map[x][y].pos.y,
-					map[x][y].pos.x + SIZE_OF_TILE - 1, map[x][y].pos.y + SIZE_OF_TILE - 1,
-					Players[i]->characters[j].colour, 0);
+			draw_sprite(map[x][y].pos.x, map[x][y].pos.y, Players[i]->characters[j].standing);
 			draw_healthbar(healthbar_pos[i][j][0], healthbar_pos[i][j][1], Players[i]->characters[j].colour);
 		}
 	}
@@ -437,6 +476,8 @@ void randomize_map(void) {
 	dfs_map(0, 0, src_x, src_y, size, valid_moves, tile_is_free);
 	for (i = 0; valid_moves[i] != 0; i++) {
 		valid_moves[i]->type = WATER;
+		valid_moves[i]->type = 10000;
+		valid_moves[i]->explored = 0;
 		draw_sprite(valid_moves[i]->pos.x, valid_moves[i]->pos.y, WATER);
 	}
 
@@ -490,8 +531,8 @@ void character_is_dead(int player_id, int character_id) {
 }
 
 void attack_player(int player_id, int character_id, int x, int y) {
-	if((x == Players[player_id]->characters[character_id].pos.x) &&
-			(y == Players[player_id]->characters[character_id].pos.y)) {
+	if(((x == Players[player_id]->characters[character_id].pos.x) &&
+			(y == Players[player_id]->characters[character_id].pos.y)) || map[x][y].occupied_by == NULL) {
 		// If selecting self, it means player chose not to attack
 		return;
 	}
@@ -679,8 +720,10 @@ void play_game() {
 	int i = 0;
 	int j =0;
 
+	hardware_init();
 	show_game();
 	initialize_players();
+	load_turn(main_player_id);
 
 	 while(1){
 		 while(is_turn_done(main_player_id)) {
@@ -695,6 +738,7 @@ void play_game() {
 		 }
 		 reset_turn(main_player_id);
 		 main_player_id = !main_player_id;
+		 load_turn(main_player_id);
 	}
 	alt_alarm_stop(&alarm);
 	return;

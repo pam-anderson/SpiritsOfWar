@@ -14,6 +14,23 @@ void sdcard_init() {
 	sdcard = alt_up_sd_card_open_dev("/dev/sdcard");
 }
 
+void load_sprite(char *filename, int* sprite) {
+	short int fd = alt_up_sd_card_fopen(filename, FALSE);
+	int i = 0;
+	for(i = 0; i < 54; i++) {
+		 alt_up_sd_card_read(fd);
+	}
+
+	for(i = 0; i < 256; i++) {
+		sprite[i] = 0;
+		sprite[i] = (alt_up_sd_card_read(fd) >> 3);
+		sprite[i] |= (alt_up_sd_card_read(fd) >> 2) << 5;
+		sprite[i] |= (alt_up_sd_card_read(fd) >> 3) << 11;
+	}
+
+	alt_up_sd_card_fclose(fd);
+}
+
 int sdcard_write_file(char* file_name, alt_u8* buffer, int size) {
 	if(alt_up_sd_card_is_Present() && alt_up_sd_card_is_FAT16() && sdcard != NULL) {
 		int fd = alt_up_sd_card_fopen(file_name, TRUE);
