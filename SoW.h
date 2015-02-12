@@ -50,12 +50,12 @@
 
 /* Music Event Trigger Struct Move Later? */
 struct Event {
-	char * Filename;
+	char * filename;
 	int initialized;
 	int size;
-	unsigned int *MusicData;
-	unsigned int MusicDataCount;
-	int MusicDataIndex;
+	unsigned int *music_data;
+	unsigned int music_data_count;
+	int music_data_index;
 };
 
 #define NumEvents 6
