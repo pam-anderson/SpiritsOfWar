@@ -723,7 +723,7 @@ void play_game() {
 	hardware_init();
 	show_game();
 	initialize_players();
-	load_turn(player_id);
+	load_turn(main_player_id);
 
 	 while(1){
 		 while(is_turn_done(main_player_id)) {
@@ -738,6 +738,7 @@ void play_game() {
 		 }
 		 reset_turn(main_player_id);
 		 main_player_id = !main_player_id;
+		 load_turn(main_player_id);
 	}
 	alt_alarm_stop(&alarm);
 	return;
