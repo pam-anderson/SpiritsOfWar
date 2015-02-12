@@ -58,7 +58,7 @@ struct Event {
 	int MusicDataIndex;
 };
 
-#define NumEvents 3
+#define NumEvents 6
 struct Event Events[NumEvents];
 
 typedef enum {
