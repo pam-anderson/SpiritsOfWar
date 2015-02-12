@@ -27,6 +27,7 @@ static alt_up_audio_dev *audio;
  */
 void music_choose(int a)
 {
+	if(a >= 0 && a < NumEvents)
 	trigger =  a;
 }
 
