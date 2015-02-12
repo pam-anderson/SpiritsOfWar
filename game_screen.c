@@ -635,7 +635,7 @@ int select_character(int player_id) {
 	int sel_x = 0, sel_y = 0;
 	int character_id = 0, old_character_id;
 	character_option curr_move = Players[0]->characters[0].move;
-	keypress move = get_player_input(SERIAL);
+	keypress move = get_player_input(0);
 
 	while(1) {
 		//move_cursor(move, &sel_x, &sel_y);
