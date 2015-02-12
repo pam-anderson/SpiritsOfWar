@@ -67,43 +67,13 @@ void music_load(char * file){
 void music_init(void){
 	int i;
 	alt_up_av_config_dev * audio_init = alt_up_av_config_open_dev("/dev/audio_and_video_config_0");
-	if(audio_init != NULL){
-		printf("Audio Config Set Up!\n");
-		fflush(stdout);
-	}
-	else{
-		printf("Audio Config Not Setup!\n");
-		fflush(stdout);
-	}
 	alt_up_sd_card_dev *device = NULL;
 	device = alt_up_sd_card_open_dev("/dev/sdcard");
-	if(device == NULL){
-		printf("SD Card Did not Open!\n");
-		fflush(stdout);
-	}
-	else{
-		printf("SD Card Opened!\n");
-		fflush(stdout);
-	}
-	if(device != NULL)	{
-		printf("Device is not Null!\n");
-		fflush(stdout);
-		if(alt_up_sd_card_is_Present())	{
-			printf("SD Card Present!\n");
-			fflush(stdout);
-			if(alt_up_sd_card_is_FAT16())	{
-				printf("SD Card is FAT16!\n");
-				fflush(stdout);
-			}
-		}
-	}
 	for(i = 0; i < NumEvents; i++)	{
 		Events[i].filename = NULL;
 		Events[i].initialized = 0;
 		Events[i].size = 0;
 	}
-	printf("Music_init done!\n");
-	fflush(stdout);
 }
 
 /*
@@ -113,15 +83,6 @@ void audio_init(void)
 {
 	int i ;
 	audio = alt_up_audio_open_dev("/dev/audio_0");
-	if(audio == NULL)	{
-		printf("Audio Device Not Opened!\n");
-		fflush(stdout);
-		return;
-	}
-	else	{
-		printf("Audio Device Opened!\n");
-		fflush(stdout);
-	}
 	alt_up_audio_reset_audio_core(audio);
 	music_buff = (unsigned int *) malloc (110 * sizeof(unsigned int));
 	for(i = 0; i < 110; i++)	{
@@ -140,18 +101,6 @@ void audio_init(void)
  */
 void music_open(char *file) {
 		fd = alt_up_sd_card_fopen(file, 0);
-		if(fd == -1){
-			printf("Error Opening File\n");
-			fflush(stdout);
-		}
-		else if (fd == -2){
-			printf("File Already Open\n");
-			fflush(stdout);
-		}
-		else{
-			printf("File is now Opened!\n");
-			fflush(stdout);
-		}
 }
 
 /*
@@ -177,8 +126,6 @@ void music_file_size(void){
 	if(strcmp(file_select,"MUS.WAV") == 0)	{
 //	if(file_select == "MUS.WAV")	{
 		wav_size = (size[0] << 3*BYTE | size[1] << 2*BYTE | size[2] << BYTE | size[3]) + BYTE;
-		printf("The Size of %s is %i\n", file_select, wav_size);
-		fflush(stdout);
 	}
 	else	{
 		for(i = 0; i < NumEvents; i++){
@@ -189,8 +136,6 @@ void music_file_size(void){
 			}
 		}
 		Events[i].size = (size[0] << 3*BYTE | size[1] << 2*BYTE | size[2] << BYTE | size[3]) + BYTE;
-		printf("The Size of %s is %i\n", file_select, Events[i].size);
-		fflush(stdout);
 	}
 
 
@@ -202,17 +147,8 @@ void music_file_size(void){
 void music_enable_ISR(void){
 	int i;
 	if(alt_irq_register(AUDIO_IRQ, NULL, audio_isr) == 0){
-		printf("IRQ Registered\n");
-		fflush(stdout);
-	}
-	else{
-		printf("IRQ Not Registered\n");
-		fflush(stdout);
 	}
 	alt_up_audio_enable_write_interrupt(audio);
-		printf("IRQ Write Enabled\n");
-		fflush(stdout);
-
 	for(i = 0; i<NumEvents; i++){
 		Events[i].music_data_index = 0;
 	}
@@ -237,9 +173,6 @@ void audio_isr(void * context, alt_u32 id)
 				if(Events[trigger].music_data_index >= Events[trigger].music_data_count){
 					Events[trigger].music_data_index = 0;
 					trigger = -1;
-
-					printf("Interrupt Triggering!\n");
-					fflush(stdout);
 				}
 				else
 					Events[trigger].music_data_index++;
@@ -286,11 +219,6 @@ void music_file_load(void){
 
 			Events[l].music_data_count++;
 		}
-
-		printf("Music Data Count is now at %i, Size is %i \n", Events[l].music_data_count, Events[l].size);
-		fflush(stdout);
-
-
 	}
 
 	else{
