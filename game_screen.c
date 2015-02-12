@@ -348,7 +348,7 @@ void animate_to_tile(int ram_location, int dx, int dy, int old_x, int old_y, int
 
 void animate(int ram_location, int old_x, int old_y, int new_x, int new_y) {
 	int dist = 1;
-	music_choose(MOVE_SND);
+	music_choose(MOVE_FX);
 	int *path = (int *) calloc(map[new_x][new_y].distance, sizeof(int));
 	get_path(new_x, new_y, path);
 	while(dist <= map[new_x][new_y].distance) {
@@ -536,14 +536,14 @@ void update_healthbar(int player_id, int character_id) {
 
 void character_is_dead(int player_id, int character_id) {
 	// Remove character from map
-	music_choose(UNIT_DIE);
+	music_choose(UNIT_DIE_FX);
 	move_player(player_id, character_id, Players[player_id]->characters[character_id].pos.x,
 			Players[player_id]->characters[character_id].pos.y, -1, -1);
 	Players[player_id]->characters_remaining--;
 }
 
 void attack_player(int player_id, int character_id, int x, int y) {
-	music_choose(Players[player_id]->characters[character_id].class);
+	music_choose((sound_fx)(Players[player_id]->characters[character_id].class));
 	if(((x == Players[player_id]->characters[character_id].pos.x) &&
 			(y == Players[player_id]->characters[character_id].pos.y)) || map[x][y].occupied_by == NULL) {
 		// If selecting self, it means player chose not to attack
