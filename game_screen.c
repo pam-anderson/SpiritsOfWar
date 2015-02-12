@@ -650,7 +650,6 @@ void do_attack(int player_id, int character_id) {
 	dfs_map(player_id, character_id, old_x, old_y, Players[player_id]->characters[character_id].rng,valid_attacks, &tile_is_attackable);
 	for(i = 0; valid_attacks[i] != 0; i++) {
 		map[valid_attacks[i]->coords.x][valid_attacks[i]->coords.y].type |= 0x200;
-		map[valid_attacks[i]->coords.x][valid_attacks[i]->coords.y].type |= 0x200;
 		draw_sprite(map[valid_attacks[i]->coords.x][valid_attacks[i]->coords.y].pos.x, map[valid_attacks[i]->coords.x][valid_attacks[i]->coords.y].pos.y, map[valid_attacks[i]->coords.x][valid_attacks[i]->coords.y].type);
 	}
 	draw_characters();
@@ -660,7 +659,6 @@ void do_attack(int player_id, int character_id) {
 	}
 	for(i = 0; valid_attacks[i] != 0; i++) {
 		map[valid_attacks[i]->coords.x][valid_attacks[i]->coords.y].type &= 0x0FF;
-		map[valid_attacks[i]->coords.x][valid_attacks[i]->coords.y].type |= 0x200;
 		draw_sprite(map[valid_attacks[i]->coords.x][valid_attacks[i]->coords.y].pos.x, map[valid_attacks[i]->coords.x][valid_attacks[i]->coords.y].pos.y, map[valid_attacks[i]->coords.x][valid_attacks[i]->coords.y].type);
 		valid_attacks[i]->explored = 0;
 		valid_attacks[i]->distance = 10000;
