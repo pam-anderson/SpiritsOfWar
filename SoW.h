@@ -19,10 +19,10 @@
 #define	TRUE 1
 
 /*Audio Event Defines*/
-#define MOVE		0
-#define WARRIOR_ATK	1
-#define ARCHER_ATK	2
-#define MAGE_ATK	3
+#define WARRIOR_ATK	0
+#define ARCHER_ATK	1
+#define MAGE_ATK	2
+#define MOVE		3
 #define UNIT_DIE	4
 
 
