@@ -27,20 +27,10 @@ begin
     begin
         if rising_edge(clk) then
             if (reset_n = '0') then
-                --saved_value <= (others => '0');
 					 done <= "0";
-				--	 ready <= "0";
             elsif (wr_en = '1' and addr = "00") then
 					-- Writing to done flag
                 done <= writedata(0 downto 0);
-         --   elsif (wr_en = '1' and addr = "01") then
-					-- Writing to ready flag
-         --       ready <= writedata(0 downto 0);
-			--	elsif (wr_en = '1' and addr = "10") then
-					-- Writing data to transfer
-			--		if done = "1" then -- Don't overwrite data if not done reading
-				--		saved_value <= writedata(7 downto 0);
-				--	end if;
             end if;
         end if;
     end process;
