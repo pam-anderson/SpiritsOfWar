@@ -233,7 +233,7 @@ int draw_exit_screen(int player_id) {
 	alt_up_char_buffer_string(char_buffer, "Are you sure you want to quit?", 25, 23);
 	alt_up_char_buffer_string(char_buffer, "[A] - Yes     [D] - No", 30, 25);
 	while(1) {
-		key = get_player_input(SERIAL);
+		key = get_player_input(player_id);
 		if (key == LEFT) {
 			alt_up_char_buffer_clear(char_buffer);
 			return 0;
@@ -277,19 +277,19 @@ alt_u32 alarm_blink_isr(void* context) {
 			colour = 0xFFFF;
 		}
 		for(character_id = 0; character_id < CHARS_PER_PLAYER; character_id++) {
-			if(Players[main_player_id]->characters[character_id].move == curr_move) {
+			if(Players[player_id]->characters[character_id].move == curr_move) {
 				alt_up_pixel_buffer_dma_draw_rectangle(pixel_buffer,
-					healthbar_pos[main_player_id][character_id][0] - SIZE_OF_TILE/2 - 1,
-					healthbar_pos[main_player_id][character_id][1] - SIZE_OF_TILE/2 + 1,
-					healthbar_pos[main_player_id][character_id][0] + SIZE_OF_TILE/2,
-					healthbar_pos[main_player_id][character_id][1] + SIZE_OF_TILE/2 + 3,
-					blinker * colour, 0);
+					healthbar_pos[player_id][character_id][0] - SIZE_OF_TILE/2 - 1,
+					healthbar_pos[player_id][character_id][1] - SIZE_OF_TILE/2 + 1,
+					healthbar_pos[player_id][character_id][0] + SIZE_OF_TILE/2,
+					healthbar_pos[player_id][character_id][1] + SIZE_OF_TILE/2 + 3,
+					blinker & colour, 0);
 			} else {
 				alt_up_pixel_buffer_dma_draw_rectangle(pixel_buffer,
-					healthbar_pos[main_player_id][character_id][0] - SIZE_OF_TILE/2 - 1,
-					healthbar_pos[main_player_id][character_id][1] - SIZE_OF_TILE/2 + 1,
-					healthbar_pos[main_player_id][character_id][0] + SIZE_OF_TILE/2,
-					healthbar_pos[main_player_id][character_id][1] + SIZE_OF_TILE/2 + 3,
+					healthbar_pos[player_id][character_id][0] - SIZE_OF_TILE/2 - 1,
+					healthbar_pos[player_id][character_id][1] - SIZE_OF_TILE/2 + 1,
+					healthbar_pos[player_id][character_id][0] + SIZE_OF_TILE/2,
+					healthbar_pos[player_id][character_id][1] + SIZE_OF_TILE/2 + 3,
 					0, 0);
 			}
 		}
@@ -594,8 +594,8 @@ void move_cursor(keypress move, int *sel_x, int *sel_y) {
 	}
 }
 
-int select_space(game_tile **valid_moves, int *sel_x, int *sel_y) {
-	keypress move = get_player_input(SERIAL);
+int select_space(int player_id, game_tile **valid_moves, int *sel_x, int *sel_y) {
+	keypress move = get_player_input(player_id);
 	draw_cursor(*sel_x, *sel_y, *sel_x, *sel_y, 0xF81F);
 	while(1) {
 		move_cursor(move, sel_x, sel_y);
@@ -604,7 +604,7 @@ int select_space(game_tile **valid_moves, int *sel_x, int *sel_y) {
 		} else if (move == ESC) {
 			return 0;
 		}
-		move = get_player_input(SERIAL);
+		move = get_player_input(player_id);
 	}
 }
 
@@ -624,7 +624,7 @@ void do_movement(int player_id, int character_id) {
 	}
 	draw_characters();
 
-	if (select_space(valid_moves, &new_x, &new_y)) {
+	if (select_space(player_id, valid_moves, &new_x, &new_y)) {
 		move_player(player_id, character_id, old_x, old_y, new_x, new_y);
 		Players[player_id]->characters[character_id].move = ATTACK;
 	}
@@ -653,7 +653,7 @@ void do_attack(int player_id, int character_id) {
 		draw_sprite(map[valid_attacks[i]->coords.x][valid_attacks[i]->coords.y].pos.x, map[valid_attacks[i]->coords.x][valid_attacks[i]->coords.y].pos.y, map[valid_attacks[i]->coords.x][valid_attacks[i]->coords.y].type);
 	}
 	draw_characters();
-	if (select_space(valid_attacks, &new_x, &new_y)) {
+	if (select_space(player_id, valid_attacks, &new_x, &new_y)) {
 		attack_player(player_id, character_id, new_x, new_y);
 		Players[player_id]->characters[character_id].move = DONE;
 	}
@@ -671,7 +671,7 @@ int select_character(int player_id) {
 	int sel_x = 0, sel_y = 0;
 	int character_id = 0, old_character_id;
 	character_option curr_move = find_player_move(player_id);//Players[0]->characters[0].move;
-	keypress move = get_player_input(0);
+	keypress move = get_player_input(player_id);
 
 	while(1) {
 		//move_cursor(move, &sel_x, &sel_y);
@@ -695,6 +695,8 @@ int select_character(int player_id) {
 					Players[player_id]->characters[character_id].move++;
 				}
 			}
+			draw_sprite(map[sel_x][sel_y].pos.x, map[sel_x][sel_y].pos.y, map[sel_x][sel_y].type);
+			draw_characters();
 			return 1;
 		} else if (move == LEFT) {
 			old_character_id = character_id;
@@ -727,7 +729,7 @@ int select_character(int player_id) {
 			sel_x = Players[player_id]->characters[character_id].pos.x;
 			sel_y = Players[player_id]->characters[character_id].pos.y;
 		}
-		move = get_player_input(SERIAL);
+		move = get_player_input(player_id);
 	}
 }
 
@@ -755,11 +757,14 @@ void reset_turn(int player_id) {
 void play_game() {
 	int i = 0;
 	int j =0;
+	main_player_id = 0;
 
 	hardware_init();
 	show_game();
 	initialize_players();
+	draw_map();
 	load_turn(main_player_id);
+
 
 	 while(1){
 		 while(is_turn_done(main_player_id)) {

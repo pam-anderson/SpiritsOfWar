@@ -2,9 +2,8 @@
 #include <stdio.h>
 
 int main(void) {
-	music_load("ee3.wav");
-	audio_init();
-	music_enable_ISR();
+	music_go();
 	keyboard_init();
+	sdcard_init();
 	show_menu();
 }

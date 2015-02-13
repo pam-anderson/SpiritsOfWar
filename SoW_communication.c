@@ -25,13 +25,17 @@ char keyboard_read(void) {
   	 }
  }
 
-char gpio_read(void) {
-	char read;
-	while(IORD_32DIRECT(GPIO_BASE, 0) == 0) {} // Wait for ready flag
-	read = IORD_32DIRECT(GPIO_BASE, 4);
-	IOWR_32DIRECT(GPIO_BASE, 0, 1); // Set done flag
-	while(IORD_32DIRECT(GPIO_BASE, 0) == 1) {}
-	IOWR_32DIRECT(GPIO_BASE, 0, 0);
+char gpio_read() {
+	int i = 0;
+	char c = 0;
+	while(IORD_32DIRECT(0x4440, 0) == 0);
+	i = IORD_32DIRECT(0x4440, 4);
+	c = (char) i;
+	printf("hello %d, %c\n", i, c);
+	IOWR_32DIRECT(0x4440, 0, 1);
+	while(IORD_32DIRECT(0x4440, 0) == 1);
+	IOWR_32DIRECT(0x4440, 0, 0);
+	return c;
 }
 
 /*
@@ -46,6 +50,7 @@ keypress get_player_input(int player_id) {
 			cmd = keyboard_read();
 		} else {
 			// Read from GPIO
+			printf("read\n");
 			cmd = gpio_read();
 		}
 

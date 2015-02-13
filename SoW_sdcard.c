@@ -12,6 +12,8 @@ alt_up_sd_card_dev* sdcard;
 
 void sdcard_init() {
 	sdcard = alt_up_sd_card_open_dev("/dev/sdcard");
+	alt_up_sd_card_is_Present();
+	alt_up_sd_card_is_FAT16();
 }
 
 void load_sprite(char *filename, int* sprite) {
