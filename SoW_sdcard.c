@@ -10,12 +10,20 @@
 
 alt_up_sd_card_dev* sdcard;
 
+/*
+ *@brief Initialize the sdcard
+ */
 void sdcard_init() {
 	sdcard = alt_up_sd_card_open_dev("/dev/sdcard");
 	alt_up_sd_card_is_Present();
 	alt_up_sd_card_is_FAT16();
 }
 
+/*
+ *@brief Load the sprite from the sdcard into a buffer
+ *@param filename The name of the bitmap file we need to read
+ *@param sprite The buffer to read the sprite into
+ */
 void load_sprite(char *filename, int* sprite) {
 	short int fd = alt_up_sd_card_fopen(filename, FALSE);
 	int i = 0;

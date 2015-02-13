@@ -1,18 +1,9 @@
 #include "SoW.h"
 #include "Sow_game_screen.h"
 
-/*
- * @brief Perform a depth first search to a defined amount of levels on the map, starting at
- *        a specific tile. Return a list of all valid, explored tiles.
- * @param player_id Player id
- * @param character_id Character id
- * @param x Map coordinate in the x axis
- * @param y Map coordinate in the y axis
- * @param levels The number of levels to explore in the search
- * @param valid_moves An empty list where the explored tiles will be store
- * @param is_valid A function which takes the current tile and determines if it is valid
- */
- 
+ /*
+  *@brief Initialize the hardware to hold textures (grass, water, rock, etc.)
+  */
  void hardware_init() {
 	int i = 0, j = 0;
 	for(i = GRASS; i <= 2; i++) {
@@ -31,6 +22,13 @@
 	}
 }
 
+/*
+ *@brief Loads a particular sprite into the ram location
+ *@param player_id The players sprite that needs to be loaded
+ *@param character_id The character that holds the sprite
+ *@param ram_location The ram address to write the sprite to
+ *@param type The sprite type in the character struct
+ */
 void load_sprite_hardware(int player_id, int character_id, int ram_location, int type) {
 	int j = 0;
 	IOWR_32DIRECT(DRAWER_BASE, 8, ram_location);
@@ -40,6 +38,11 @@ void load_sprite_hardware(int player_id, int character_id, int ram_location, int
 	}
 }
 
+/*
+ *@brief Loads the sprites into the character struct calling load sprite which reads the sdcard
+ *@param player_id The player id
+ *@param character_id The character sprites we are reading
+ */
 void sprite_init(int player_id, int character_id) {
 	int i = 0;
 	Players[player_id]->characters[character_id].sprites = (int **) calloc(9, sizeof(int *));
@@ -49,6 +52,10 @@ void sprite_init(int player_id, int character_id) {
 	}
 }
 
+/*
+ *@brief Loads the animation sprites needed for the players turn into ram
+ *@param player_id The current players turn
+ */
 void load_turn(int player_id) {
 	int i = 0, j = 0;
 	for(i = 0; i < CHARS_PER_PLAYER; i++) {
@@ -57,6 +64,18 @@ void load_turn(int player_id) {
 		}
 	}
 }
+
+/*
+ * @brief Perform a depth first search to a defined amount of levels on the map, starting at
+ *        a specific tile. Return a list of all valid, explored tiles.
+ * @param player_id Player id
+ * @param character_id Character id
+ * @param x Map coordinate in the x axis
+ * @param y Map coordinate in the y axis
+ * @param levels The number of levels to explore in the search
+ * @param valid_moves An empty list where the explored tiles will be store
+ * @param is_valid A function which takes the current tile and determines if it is valid
+ */
  
 void dfs_map(int player_id, int character_id, int x, int y, int levels,game_tile** valid_moves,
 		int (*is_valid)(int, int, int)) {
@@ -148,7 +167,12 @@ void draw_sprite(int x, int y, sprite type) {
 	else if(type == (GRASS|0x200)) alt_up_pixel_buffer_dma_draw_box(pixel_buffer, x, y, x, y, grass[0]|0xF800, 0);
 	else if(type == (GRASS|0x100) || (type & 0xFF) >= ANIMATION_HARDWARE) alt_up_pixel_buffer_dma_draw_box(pixel_buffer, x, y, x, y, grass[0]|0x001F, 0);
 }
-
+/*
+ * @brief Draw a tile corner pixel
+ * @param x The map x tile that needs drawing
+ * @param y The map y tile that needs drawing
+ * @param type The type of tile
+ */
 void draw_corner(int px, int py, sprite type) {
 	if(map[px][py].type == GRASS) alt_up_pixel_buffer_dma_draw_box(pixel_buffer, map[px][py].pos.x, map[px][py].pos.y, map[px][py].pos.x, map[px][py].pos.y, grass[0], 0);
 	else if(map[px][py].type == WATER) alt_up_pixel_buffer_dma_draw_box(pixel_buffer, map[px][py].pos.x, map[px][py].pos.y, map[px][py].pos.x, map[px][py].pos.y, water[0], 0);
@@ -363,6 +387,15 @@ void animate_to_tile(int ram_location, int dx, int dy, int old_x, int old_y, int
 	draw_sprite(map[old_x][old_y].pos.x, map[old_x][old_y].pos.y, map[old_x][old_y].type);
 }
 
+
+/*
+ * @brief Move character to the selected location.
+ * @param ram_location The first animation sprite of character in ram
+ * @param old_x Previous coordinate of character on map in x axis
+ * @param old_y Previous coordinate of character on map in y axis
+ ^ @param new_x The final x destination for the character
+ * @param new_y the final y destination for the character
+ */
 void animate(int ram_location, int old_x, int old_y, int new_x, int new_y) {
 	int dist = 1;
 	music_choose(MOVE_FX);
@@ -390,6 +423,12 @@ void animate(int ram_location, int old_x, int old_y, int new_x, int new_y) {
 	free(path);
 }
 
+/*
+ *@brief Gets the path from the selected character to the position.
+ *@param new_x The selected x postion
+ *@param new_y The selected y position
+ *@param path The buffer to place the path 0 = right, 1 = left, 2 = up, 3 = down
+ */
 void get_path(int new_x, int new_y, int *path) {
 	printf("get_path\n");
 	int i = map[new_x][new_y].distance;
@@ -416,6 +455,15 @@ void get_path(int new_x, int new_y, int *path) {
 	printf("end get path\n");
 }
 
+/*
+ * @brief Move the character from current position to selected position
+ * @param player_id The current player Player id
+ * @param character_id The character that is moving
+ * @param old_x Current map coordinate of character in x
+ * @param old_y Current map coordinate of character in y
+ * @param new_x Destination map coordinate of character in x
+ * @param new_y Destination map coordinate of character in y
+ */
 void move_player(int player_id, int char_id, int old_x, int old_y, int new_x, int new_y) {
 	map[old_x][old_y].occupied_by = NULL;
 	if((new_x == -1) || (new_y == -1) || (new_x == DIMENSION_OF_MAP_X) || (new_y == DIMENSION_OF_MAP_Y)) {
@@ -427,6 +475,9 @@ void move_player(int player_id, int char_id, int old_x, int old_y, int new_x, in
 	map[new_x][new_y].occupied_by = &Players[player_id]->characters[char_id];
 }
 
+/*
+ *@brief Initializes all the player and character data
+ */
 void initialize_players() {
 	int i;
 	int j;
@@ -462,7 +513,13 @@ void initialize_players() {
 	}
 }
 
-
+/*
+ *@brief Checks if player can move onto this tile (Used in BFS)
+ *@param player_id The current player id
+ *@param x The map coordinate being checked in x
+ *@param y The map coordinate being checked in y
+ *@returns 1 if space is free to move to 0 otherwise
+ */
 int tile_is_free(int player_id, int x, int y) {
 	if ((0 <= x) && (x < DIMENSION_OF_MAP_X ) && (0 <= y) && (y < DIMENSION_OF_MAP_Y) &&
 			(map[x][y].occupied_by == NULL) && (map[x][y].explored == 0) && (map[x][y].type == GRASS)) {
@@ -472,6 +529,13 @@ int tile_is_free(int player_id, int x, int y) {
 	}
 }
 
+/*
+ *@brief Checks if player can attack this tile (Used in BFS)
+ *@param player_id The current player id
+ *@param x The map coordinate being checked in x
+ *@param y The map coordinate being checked in y
+ *@returns 1 if space is attackable 0 otherwise
+ */
 int tile_is_attackable(int player_id, int x, int y) {
 	if ((0 <= x) && (x < DIMENSION_OF_MAP_X) && (0 <= y) && (y < DIMENSION_OF_MAP_Y) &&
 			(map[x][y].explored == 0) && ((map[x][y].occupied_by->team != player_id) || (map[x][y].occupied_by == NULL)) && map[x][y].type == GRASS) {
@@ -578,6 +642,12 @@ void attack_player(int player_id, int character_id, int x, int y) {
 	}
 }
 
+/*
+ *@brief Move the cursor based on the keypress
+ *@param move The keypress to determine direction
+ *@param sel_x The current x position of cursor
+ *@param sel_y The current y position of cursor
+ */
 void move_cursor(keypress move, int *sel_x, int *sel_y) {
 	if (move == UP && *sel_y > 0) {
 			*sel_y -= 1;
@@ -594,6 +664,14 @@ void move_cursor(keypress move, int *sel_x, int *sel_y) {
 	}
 }
 
+/*
+ *@brief The space to select for movement or attacks
+ *@param player_id The current player id to determine input device
+ *@param valid_moves The valid move or attack spaces
+ *@param sel_x The current map x coordinate of the cursor
+ *@param sel_y The current map y coordinate of the cursor
+ *@returns 1 if space is selected 0 if player wants to deselect
+ */
 int select_space(int player_id, game_tile **valid_moves, int *sel_x, int *sel_y) {
 	keypress move = get_player_input(player_id);
 	draw_cursor(*sel_x, *sel_y, *sel_x, *sel_y, 0xF81F);
@@ -608,6 +686,11 @@ int select_space(int player_id, game_tile **valid_moves, int *sel_x, int *sel_y)
 	}
 }
 
+/*
+ *@brief Do the movement phase for the selected character
+ *@param player_id The current players turn
+ *@param character_id The selected character to do movement
+ */
 void do_movement(int player_id, int character_id) {
 	printf("do movement\n");
 	int i;
@@ -639,6 +722,11 @@ void do_movement(int player_id, int character_id) {
 	free(valid_moves);
 }
 
+/*
+ *@brief Do the attack phase for the selected character
+ *@param player_id The current players turn
+ *@param character_id The selected character to do attack
+ */
 void do_attack(int player_id, int character_id) {
 	int i = 0;
 	int old_x = Players[player_id]->characters[character_id].pos.x;
@@ -667,6 +755,11 @@ void do_attack(int player_id, int character_id) {
 	free(valid_attacks);
 }
 
+/*
+ *@brief Select the character to do an action (movement or attack)
+ *@param player_id The current players turn
+ *@returns 1 if an action is taken or 0 if player wants to quit the game
+ */
 int select_character(int player_id) {
 	int sel_x = 0, sel_y = 0;
 	int character_id = 0, old_character_id;
@@ -747,6 +840,10 @@ int is_turn_done(int player_id) {
 		return 0;
 }
 
+/*
+ *@brief Resets characters to the movement phase for next turn
+ *@param player_id the current players turn.
+ */
 void reset_turn(int player_id) {
 	int i = 0;
 	for(i = 0; i < CHARS_PER_PLAYER; i++) {
