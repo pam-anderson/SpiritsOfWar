@@ -545,6 +545,10 @@ int tile_is_attackable(int player_id, int x, int y) {
 	}
 }
 
+/*
+ * @brief Randomly places rocks and a lake in the map, ensuring it does not block characters
+ *        in their initial positions.
+ */
 void randomize_map(void) {
 	// Randomly create 1 lake and 1 river
 	int src_x = rand() % DIMENSION_OF_MAP_X;
@@ -584,6 +588,13 @@ void randomize_map(void) {
 	free(valid_moves);
 }
 
+/*
+ * @brief Check if a specific tile is in a list of moves
+ * @param x The x coordinate of the map tile to look for
+ * @param y The y coordinate of the map tile to look for
+ * @param moves A list of pointers to map tiles
+ * @return 1 if the tile is found in moves, 0 if the tile is not found in moves
+ */
 int is_valid_move(int x, int y, game_tile** moves) {
 	int i;
 
@@ -595,6 +606,11 @@ int is_valid_move(int x, int y, game_tile** moves) {
 	return 0;
 }
 
+/*
+ * @brief Redraw a characters health bar
+ * @param player_id Player id
+ * @param character_id Character id
+ */
 void update_healthbar(int player_id, int character_id) {
 	// Black out health lost
 	int pixel_per_hp = HEALTHBAR_LEN / classes[Players[player_id]->characters[character_id].class].hp;
@@ -616,6 +632,12 @@ void update_healthbar(int player_id, int character_id) {
 			healthbar_pos[player_id][character_id][1] + SIZE_OF_TILE/2 - 1, 0xF822, 0);
 }
 
+/*
+ * @brief Update player and character with appropriate information for a character that
+ *        has just died
+ * @param player_id Player id
+ * @param character_id Character id
+ */
 void character_is_dead(int player_id, int character_id) {
 	// Remove character from map
 	music_choose(UNIT_DIE_FX);
@@ -624,6 +646,13 @@ void character_is_dead(int player_id, int character_id) {
 	Players[player_id]->characters_remaining--;
 }
 
+/*
+ * @brief Attack a specific location.
+ * @param player_id Player id
+ * @param character_id Character id
+ * @param x The x coordinate of the location to attack
+ * @param y The y coordinate of the location to attack
+ */
 void attack_player(int player_id, int character_id, int x, int y) {
 	music_choose((sound_fx)(Players[player_id]->characters[character_id].class));
 	if(((x == Players[player_id]->characters[character_id].pos.x) &&
@@ -851,6 +880,9 @@ void reset_turn(int player_id) {
 	}
 }
 
+/*
+ * @brief The main function of the Game screen.
+ */
 void play_game() {
 	int i = 0;
 	int j =0;
