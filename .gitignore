@@ -15,4 +15,4 @@
 !SlaveSystem/*.tcl
 !SlaveSystem/*.c
 !SlaveSystem/*.h
-!sprites/*.bmp
+!sprites/
